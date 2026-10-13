@@ -345,9 +345,11 @@ acopladas a caminhos/API do pharmacore).
       do identificador (`beta`), nunca em `latest`.
 - [x] Nome reservado: `0.0.0` publicado manualmente e validado instalando do registro
       (ESM, CJS, CLI).
-- [ ] Cadastrar o secret `NPM_TOKEN` no GitHub (você).
-- [ ] Publicar `0.1.0-beta.0` (tag `v0.1.0-beta.0` → CI com provenance, ou manual com
-      `npm publish --tag beta`) e validar instalando do registro em Node ESM, CJS e Bun.
+- [x] Cadastrar o secret `NPM_TOKEN` no GitHub.
+- [x] Publicar `0.1.0-beta.0` pelo CI (tag `v0.1.0-beta.0`, 2026-10-13) e validar instalando
+      do registro: Node ESM, CJS, Bun, CLI de skills e `npm audit signatures` (assinatura e
+      atestado de provenance verificados). Dist-tags: `latest` = 0.0.0, `beta` = 0.1.0-beta.0.
+      Obs.: logo após o publish, o registro pode responder com cache antigo por alguns minutos.
 
 ### Fase 10 — Migração piloto
 - [ ] shift-swap: substituir `src/shared/*` e ajustar use cases ao `Result` tipado.
