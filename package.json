@@ -13,6 +13,14 @@
   ],
   "license": "MIT",
   "author": "macndesign <macndesign@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/macndesign/core-kernel.git"
+  },
+  "homepage": "https://github.com/macndesign/core-kernel#readme",
+  "bugs": {
+    "url": "https://github.com/macndesign/core-kernel/issues"
+  },
   "type": "module",
   "sideEffects": false,
   "engines": {

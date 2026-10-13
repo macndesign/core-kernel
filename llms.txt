@@ -243,5 +243,5 @@ Agent skills with detailed patterns ship in the package: `bunx core-kernel skill
 
 ## Optional
 
-- Full example (not shipped in the npm package; see `examples/order` in the source repository): aggregate, composite VO, events, repository and query ports, use cases, mapper, tests.
+- Full example (not shipped in the npm package): https://github.com/macndesign/core-kernel/tree/main/examples/order — aggregate, composite VO, events, repository and query ports, use cases, mapper, tests.
 - README.md (shipped): guide in Portuguese.
