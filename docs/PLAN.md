@@ -232,10 +232,20 @@ Toda fase segue **TDD** com `bun:test` (teste vermelho → implementação) e te
     (Fase 5), para não vazar estado interno.
 
 ### Fase 5 — Camada de aplicação
-- [ ] `UseCase<I, O, E>` (interface + base abstrata opcional).
-- [ ] Ports de repositório segregadas + `CrudRepository`.
-- [ ] Ports `Clock`, `IdGenerator`, `DomainEventPublisher`.
-- [ ] DTOs de paginação e interface `Mapper<Domain, Dto>`.
+- [x] `UseCase<I, O, E>` (interface) + `BaseUseCase` (converte exceções em `UnexpectedError`).
+- [x] Ports de repositório segregadas + `CrudRepository`, tipadas pelo id da entidade.
+- [x] Ports `Clock` (+ `systemClock`), `IdGenerator` (da Fase 3), `DomainEventPublisher`.
+- [x] DTOs de paginação e interface `Mapper<Domain, Raw>` (`toDomain`/`fromDomain`).
+- Notas de implementação:
+  - Decisão 2: repositórios devolvem `T | null` e **lançam** em falha de infraestrutura;
+    o use case converte `null` em `NotFoundError` e o `BaseUseCase` converte exceções em
+    `UnexpectedError` (com a original em `cause`).
+  - `findById`/`delete` recebem o id tipado (`OrderId`), não `string`.
+  - Paginação mantém os nomes e o envelope do contrato do pharmacore
+    (`PaginatedInputDTO`, `PaginationMetaDTO`, `PaginatedResultDTO<T>`, `totalPages =
+    ceil(total / pageSize)`) e ganhou `validatePagination` e `toPaginatedResult`.
+  - Coverage: o limite de 95% vale só para linhas; a métrica de funções do Bun tem falsos
+    negativos (construtores implícitos e inicializadores de campo).
 
 ### Fase 6 — VOs comuns (`./vo`, `./vo/br`)
 - [ ] Genéricos: `Email`, `Text`, `Url`, `Money` (centavos inteiros + moeda),
@@ -296,6 +306,6 @@ acopladas a caminhos/API do pharmacore).
 | # | Decisão | Status |
 |---|---|---|
 | 1 | Nome no npm | **`core-kernel`** (sem escopo). Reservar cedo publicando `0.0.0`, ou usar `@macndesign/core-kernel` se o npm recusar por similaridade |
-| 2 | Repositório retorna `T \| null` ou `Result<T>` | Em aberto — recomendação: `T \| null` |
+| 2 | Repositório retorna `T \| null` ou `Result<T>` | **`T \| null`**; falha de infra é exceção → `UnexpectedError` no use case |
 | 3 | Idioma da API e dos códigos de erro | **Inglês** (API, nomes e `code`); mensagens são sobrescrevíveis via construtor |
 | 4 | VOs brasileiros no mesmo pacote (`./vo/br`) ou separado | Em aberto — recomendação: subpath `./vo/br` |

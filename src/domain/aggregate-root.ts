@@ -14,14 +14,7 @@ export abstract class AggregateRoot<
   Id extends UniqueId = UniqueId,
   E extends DomainEvent = DomainEvent,
 > extends Entity<P, Id> {
-  #events: E[];
-
-  protected constructor(props: P, id: Id) {
-    super(props, id);
-    // Inicializado aqui, e não na declaração, porque o coverage do Bun conta o
-    // inicializador de campo como uma função separada que nunca marca como executada.
-    this.#events = [];
-  }
+  #events: E[] = [];
 
   /** Eventos pendentes de publicação (cópia). */
   get domainEvents(): readonly E[] {
