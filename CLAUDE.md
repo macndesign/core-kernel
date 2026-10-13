@@ -51,10 +51,26 @@ Ao criar um subpath novo, atualize ao mesmo tempo:
 Mudança incompatível na API pública é *breaking change* (SemVer). Quando as skills de
 `skills/` existirem (Fase 8b), elas devem ser atualizadas no mesmo PR que muda a API.
 
+## Skills e CLI (`skills/`, `cli/`, `llms.txt`)
+
+- `skills/<nome>/` é publicado no pacote e instalado nos projetos consumidores pelo CLI
+  (`bunx core-kernel skills add`). Cada skill: `SKILL.md` (frontmatter `name` = pasta,
+  `description` com os gatilhos), `references/*.md` com os padrões e exemplos, e
+  `agents/openai.yaml` (metadados do Codex). Skills para quem **mantém** a lib ficam em
+  `.claude/skills/`, que não é publicado.
+- **Toda mudança na API pública atualiza as skills e o `llms.txt` no mesmo PR.**
+- Exemplos nas references e no `llms.txt` são código real: `bun run check:skills` compila
+  todo bloco ```ts contra o pacote buildado e roda os blocos de teste. Convenções:
+  `// file: nome.ts` na primeira linha nomeia o arquivo (blocos do mesmo documento se
+  importam); ```ts nocheck marca pseudocódigo/assinaturas.
+- `cli/` usa `node:fs` e por isso fica **fora** de `src/` (que é agnóstico de runtime), com
+  build próprio (`tsconfig.cli.json`, só ESM) e testes em `cli/__tests__/`. Mensagens do CLI em
+  português.
+
 ## Build
 
-`scripts/build.ts` roda o `tsc` duas vezes (`tsconfig.esm.json` → `dist/esm`,
-`tsconfig.cjs.json` → `dist/cjs`) e grava `dist/cjs/package.json` com `"type": "commonjs"`.
+`scripts/build.ts` roda o `tsc` para a lib duas vezes (`tsconfig.esm.json` → `dist/esm`,
+`tsconfig.cjs.json` → `dist/cjs`) e uma para o CLI (`tsconfig.cli.json` → `dist/cli`) e grava `dist/cjs/package.json` com `"type": "commonjs"`.
 Não há bundler **de propósito**: emitir um arquivo por módulo mantém cada classe única por
 formato, mesmo quando importada por subpaths diferentes. Não troque por `bun build` sem
 resolver isso.
@@ -76,9 +92,10 @@ resolver isso.
 ## Comandos
 
 ```bash
-bun run verify          # tudo que o CI roda: lint, typecheck, testes+coverage, build, check:package
+bun run verify          # lint, typecheck, testes+coverage, build, check:package, check:examples, check:skills
 bun run lint:fix        # Biome corrige formatação/lint
-bun run check:package   # publint + attw + smoke test ESM/CJS do pacote (requer build)
+bun run check:package   # publint + attw + smoke ESM/CJS + smoke do CLI (requer build)
+bun run check:skills    # frontmatter + blocos de código das skills/llms.txt (requer build)
 ```
 
 Neste ambiente, `tsc` global falha com uma mensagem enganosa. Use os scripts do

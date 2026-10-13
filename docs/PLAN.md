@@ -295,7 +295,7 @@ Toda fase segue **TDD** com `bun:test` (teste vermelho → implementação) e te
     quando o tipo de sucesso mudava. `Fail<T, E>` virou `Fail<E>` (commit `fe682ab`,
     breaking change), validado em TS 5.4, 5.9 e 7.
   - Ids de eventos consomem a sequência do `SequentialIdGenerator`; documentado.
-  - Pendente para a 8b: os templates de código do `llms.txt` ainda não são checados pelo
+  - ~~Pendente para a 8b~~ Resolvido na 8b: os templates de código do `llms.txt` agora são checados pelo
     `tsc` (entram no mesmo mecanismo das references das skills).
 
 ### Fase 8b — Recursos para LLMs
@@ -312,17 +312,21 @@ acopladas a caminhos/API do pharmacore).
 | `openspec-*` | Fora — gerados pelo `openspec init` do projeto consumidor |
 | MCP de banco | Fora — específico do projeto |
 
-- [ ] Skills em `skills/<nome>/SKILL.md` + `references/*.md` + `agents/openai.yaml`
+- [x] Skills em `skills/<nome>/SKILL.md` + `references/*.md` + `agents/openai.yaml`
       (formato Agent Skills), sem caminhos fixos, importando de `core-kernel`,
-      `core-kernel/vo` e `core-kernel/testing`.
-- [ ] CLI `bunx core-kernel skills add | update | check` com `--target claude|agents|all`:
-      copia para `.claude/skills/` e `.agents/skills/`, grava `skills.lock.json` com a versão
-      da lib e opcionalmente injeta bloco gerenciado no `CLAUDE.md`/`AGENTS.md` do projeto.
-      Zero deps (`node:fs`, `node:path`); **sem `postinstall`**.
-- [ ] CI: frontmatter válido + blocos ```ts das references compilando (extraídos de
-      `examples/` e checados pelo `tsc`).
-- [ ] (Opcional) `.claude-plugin/marketplace.json` apontando para `skills/`.
-- [ ] Regra no `CLAUDE.md`: mudança de API pública atualiza a skill no mesmo PR.
+      `core-kernel/vo` e `core-kernel/testing`. São 10: as 7 reescritas + `ddd-result-errors`,
+      `ddd-aggregate-events`, `ddd-testing`.
+- [x] CLI `bunx core-kernel skills add | update | check | list` com
+      `--target claude|agents|all`: copia para `.claude/skills/` e `.agents/skills/`, grava
+      `core-kernel.skills.json` (versão + hash por target/skill). Zero deps; sem `postinstall`.
+      Nunca sobrescreve skill editada ou de outra origem sem `--force`; remove skills que saíram
+      do pacote; hash ignora CRLF/LF. **Não feito:** injetar bloco no `CLAUDE.md`/`AGENTS.md`
+      do consumidor (intrusivo; as `description` das skills já fazem o roteamento).
+- [x] CI: `check:skills` valida frontmatter, compila todo bloco ```ts das references e do
+      `llms.txt` contra o `dist` e **roda os blocos de teste** (exemplo errado reprova o CI).
+- [ ] (Opcional, não feito) `.claude-plugin/marketplace.json` apontando para `skills/`.
+- [x] Regra no `CLAUDE.md`: mudança de API pública atualiza a skill no mesmo PR.
+- [x] Smoke do CLI publicado (`scripts/smoke-cli.mjs`) em `check:package` e na matriz Node 20/22/24.
 - **DoD:** num projeto vazio, `bun add core-kernel && bunx core-kernel skills add` permite
   ao Claude e ao Codex gerar uma entidade e um use case que compilam e passam nos testes.
 

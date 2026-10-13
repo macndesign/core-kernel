@@ -1,0 +1,4 @@
+interface:
+  display_name: "Result e erros"
+  short_description: "Tratar falhas com Result e erros tipados do core-kernel"
+  default_prompt: "Implemente ou revise o tratamento de falhas usando Result e os erros tipados do core-kernel (ValidationError, NotFoundError, ConflictError...), com códigos estáveis e propagação por retorno antecipado."

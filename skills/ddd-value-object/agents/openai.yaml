@@ -1,0 +1,4 @@
+interface:
+  display_name: "Value Object"
+  short_description: "Criar Value Objects com o core-kernel"
+  default_prompt: "Crie ou revise um Value Object com o core-kernel (ValueObject + Guard + Result), com normalização, validação por código de erro e testes. Verifique antes se um VO pronto (core-kernel/vo, core-kernel/vo/br) já resolve."

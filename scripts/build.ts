@@ -9,6 +9,8 @@ rmSync("dist", { recursive: true, force: true });
 
 await $`tsc -p tsconfig.esm.json`;
 await $`tsc -p tsconfig.cjs.json`;
+// CLI de skills: só ESM e usa node:fs, por isso fica fora da lib (que é agnóstica de runtime).
+await $`tsc -p tsconfig.cli.json`;
 
 // O package.json raiz é "type": "module"; este marca dist/cjs como CommonJS para o Node
 // e para o TypeScript (os .d.ts dali passam a descrever módulos CJS).

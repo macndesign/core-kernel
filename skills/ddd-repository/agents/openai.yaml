@@ -1,0 +1,4 @@
+interface:
+  display_name: "Repository"
+  short_description: "Ports e adapters de repositório com o core-kernel"
+  default_prompt: "Crie ou revise a port de repositório e o adapter de persistência com o core-kernel: interfaces segregadas, T | null, mapper com restore e dublê em memória."

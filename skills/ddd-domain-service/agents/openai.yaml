@@ -1,0 +1,4 @@
+interface:
+  display_name: "Domain Service"
+  short_description: "Serviços de domínio puros com o core-kernel"
+  default_prompt: "Crie ou revise um serviço de domínio puro (sem I/O) com o core-kernel para uma regra que envolve vários objetos de domínio, devolvendo Result quando reprova com motivo, e testes diretos."

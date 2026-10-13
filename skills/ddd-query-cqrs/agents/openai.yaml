@@ -1,0 +1,4 @@
+interface:
+  display_name: "Query / CQRS"
+  short_description: "Leituras com DTOs e paginação no estilo CQRS"
+  default_prompt: "Crie ou revise uma leitura no estilo CQRS com o core-kernel: port de query devolvendo DTOs, use case validando paginação e filtros, dublê em memória e testes."

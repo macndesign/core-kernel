@@ -8,6 +8,7 @@ frameworks, banco e UI — em **Bun** e **Node ≥ 20**, para backend, web, mobi
 - `UseCase`, ports de repositório segregadas, `Clock`, paginação
 - VOs prontos (`Email`, `Money`, `DateRange`, `Cpf`, `Cnpj` alfanumérico...)
 - Kit de testes: repositório em memória, relógio fixo, ids previsíveis
+- Skills para assistentes de código (Claude Code, Codex...) que ensinam os padrões da lib
 - Zero dependências de runtime · ESM e CommonJS · TypeScript ≥ 5.4
 
 > 🚧 Versão 0.x: a API ainda pode mudar entre versões menores.
@@ -172,6 +173,31 @@ assertFail(await useCase.execute({ orderId: "..." }), "UNEXPECTED");
 
 `assertOk`/`assertFail` funcionam com qualquer test runner. `SequentialIdGenerator().install()`
 torna ids previsíveis (lembre que ids de eventos também consomem a sequência).
+
+## Skills para assistentes de código
+
+O pacote traz 10 skills (formato Agent Skills) que ensinam um assistente de código a usar a
+lib nos padrões dela. Instale no projeto:
+
+```bash
+bunx core-kernel skills add
+```
+
+| Comando | O que faz |
+|---|---|
+| `skills add [--target claude\|agents\|all]` | Copia as skills para `.claude/skills` (Claude Code) e/ou `.agents/skills` (Codex e outros). Sem `--target`, usa as pastas que já existem no projeto (ou `.claude`). |
+| `skills update` | Atualiza para a versão instalada do core-kernel. |
+| `skills check` | Falha (exit 1) se estiverem ausentes, editadas ou desatualizadas — útil no CI. |
+| `skills list` | Lista as skills disponíveis. |
+
+O estado fica em `core-kernel.skills.json` (versione junto com as skills). Skills editadas
+localmente ou com o mesmo nome de outra origem **nunca são sobrescritas** sem `--force`.
+
+Skills: `ddd-result-errors`, `ddd-value-object`, `ddd-entity`, `ddd-aggregate-events`,
+`ddd-use-case`, `ddd-repository`, `ddd-domain-service`, `ddd-dto`, `ddd-query-cqrs`,
+`ddd-testing`. Todo exemplo de código delas é compilado e testado no CI desta lib.
+
+O pacote também publica um `llms.txt` com o resumo da API e as regras para assistentes.
 
 ## Value Objects disponíveis
 

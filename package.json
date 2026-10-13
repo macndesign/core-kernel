@@ -20,8 +20,12 @@
   },
   "files": [
     "dist",
+    "skills",
     "llms.txt"
   ],
+  "bin": {
+    "core-kernel": "./dist/cli/index.js"
+  },
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
   "types": "./dist/cjs/index.d.ts",
@@ -70,18 +74,19 @@
   },
   "scripts": {
     "build": "bun scripts/build.ts",
-    "test": "bun test ./src",
-    "test:coverage": "bun test --coverage ./src",
+    "test": "bun test ./src ./cli",
+    "test:coverage": "bun test --coverage ./src ./cli",
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
-    "check:package": "publint --strict && attw --pack . --profile node16 && node scripts/smoke.mjs && node scripts/smoke.cjs",
-    "verify": "bun run lint && bun run typecheck && bun run test:coverage && bun run build && bun run check:package && bun run check:examples",
+    "check:package": "publint --strict && attw --pack . --profile node16 && node scripts/smoke.mjs && node scripts/smoke.cjs && node scripts/smoke-cli.mjs",
+    "verify": "bun run lint && bun run typecheck && bun run test:coverage && bun run build && bun run check:package && bun run check:examples && bun run check:skills",
     "prepublishOnly": "bun run verify",
     "prepare": "simple-git-hooks",
     "check:examples": "tsc -p examples/tsconfig.json && bun test ./examples",
-    "check:ts-compat": "bunx -p typescript@5.4.5 tsc -p examples/tsconfig.json"
+    "check:ts-compat": "bunx -p typescript@5.4.5 tsc -p examples/tsconfig.json",
+    "check:skills": "bun scripts/check-skills.ts"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",

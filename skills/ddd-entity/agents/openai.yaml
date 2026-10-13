@@ -1,0 +1,4 @@
+interface:
+  display_name: "Entity"
+  short_description: "Criar entidades com o core-kernel"
+  default_prompt: "Crie ou revise uma entidade com o core-kernel: id tipado, create/restore, invariantes com VOs e Guard, métodos de domínio que devolvem Result e testes."

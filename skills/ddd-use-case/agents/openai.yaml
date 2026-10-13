@@ -1,0 +1,4 @@
+interface:
+  display_name: "Use Case"
+  short_description: "Criar casos de uso com o core-kernel"
+  default_prompt: "Crie ou revise um caso de uso com BaseUseCase do core-kernel: menor port necessária, Clock, regra delegada ao domínio, persistir e publicar eventos, e testes com core-kernel/testing."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agregados e eventos"
+  short_description: "Modelar agregados e eventos de domínio com o core-kernel"
+  default_prompt: "Modele ou revise um agregado com o core-kernel (AggregateRoot com união tipada de eventos), emitindo eventos após as regras e publicando-os no use case depois de persistir."

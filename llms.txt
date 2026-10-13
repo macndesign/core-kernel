@@ -14,31 +14,32 @@ Rules an assistant must follow when writing code with core-kernel:
 - Inject `Clock` instead of calling `new Date()` in use cases. Pass `now` into domain methods.
 - Depend on the narrowest port: `FindByIdRepository<Order> & UpdateRepository<Order>`, not a full CRUD interface.
 - Use typed ids: `class OrderId extends UniqueId { declare private readonly __brand: "OrderId" }`.
+- Check the ready-made value objects (`core-kernel/vo`, `core-kernel/vo/br`) before writing a new one.
 - Libraries built on core-kernel list it as a `peerDependency`.
 
 ## Imports
 
-- `core-kernel`: Result, Ok, Fail, AppError, ValidationError, NotFoundError, ConflictError, ForbiddenError, UnexpectedError, isAppError, Guard, ValueObject, isValueObject, Entity, isEntity, AggregateRoot, UniqueId, IdGenerator, DomainEvent, createDomainEvent, Auditable, UseCase, BaseUseCase, CreateRepository, UpdateRepository, DeleteRepository, FindByIdRepository, CrudRepository, EntityId, Clock, systemClock, DomainEventPublisher, Mapper, PaginatedInputDTO, PaginationMetaDTO, PaginatedResultDTO, validatePagination, toPaginatedResult
+- `core-kernel`: Result, Ok, Fail, AppError, ErrorKind, ValidationError, NotFoundError, ConflictError, ForbiddenError, UnexpectedError, isAppError, Guard, ValueObject, isValueObject, Entity, isEntity, AggregateRoot, UniqueId, IdGenerator, DomainEvent, createDomainEvent, Auditable, UseCase, BaseUseCase, CreateRepository, UpdateRepository, DeleteRepository, FindByIdRepository, CrudRepository, EntityId, Clock, systemClock, DomainEventPublisher, Mapper, PaginatedInputDTO, PaginationMetaDTO, PaginatedResultDTO, validatePagination, toPaginatedResult
 - `core-kernel/vo`: Email, Text, Url, Money, DateRange, StrongPassword
 - `core-kernel/vo/br`: Cpf, Cnpj (numeric and alphanumeric, IN RFB 2.229/2024)
 - `core-kernel/testing`: InMemoryRepository, FixedClock, SequentialIdGenerator, InMemoryEventPublisher, assertOk, assertFail
 
 ## Result
 
-```ts
+```ts nocheck
 type Result<T, E extends AppError = AppError> = Ok<T, E> | Fail<E>;
 Result.ok(value) / Result.ok()                     // Result<T, never> / Result<void, never>
 Result.fail(error)                                 // Result<never, E>
 r.isOk() / r.isFail() / r.ok                       // narrowing
 r.map(fn) / r.flatMap(fn) / r.mapError(fn) / r.match({ ok, fail }) / r.unwrapOr(x)
 r.unwrap()                                         // throws the error: tests and app edges only
-Result.combine([a, b] as const)                    // Result<[A, B], EA | EB>; merges ValidationError issues
+Result.combine([a, b])                             // Result<[A, B], EA | EB>; merges ValidationError issues
 Result.try(fn, mapError?) / Result.tryAsync(fn, mapError?)  // thrown → UnexpectedError (cause kept)
 ```
 
 ## Errors
 
-```ts
+```ts nocheck
 new NotFoundError("Order not found", { code: "ORDER_NOT_FOUND", details?, cause? })
 new ValidationError({ field: "email", code: "INVALID_EMAIL", message: "..." })   // or an array of issues
 error.kind  // "validation" | "not_found" | "conflict" | "forbidden" | "unexpected" → adapters map to HTTP etc.
@@ -54,6 +55,9 @@ All return `Result<void, ValidationError>` and accept `{ field?, code?, message?
 ## Value object template
 
 ```ts
+// file: sku.vo.ts
+import { Guard, type Result, type ValidationError, ValueObject } from "core-kernel";
+
 export class Sku extends ValueObject<string> {
   private constructor(value: string) {
     super(value);
@@ -73,6 +77,29 @@ export class Sku extends ValueObject<string> {
 ## Aggregate template
 
 ```ts
+// file: order.entity.ts
+import {
+  AggregateRoot,
+  ConflictError,
+  createDomainEvent,
+  type DomainEvent,
+  Result,
+  UniqueId,
+  type ValidationError,
+} from "core-kernel";
+import { Email } from "core-kernel/vo";
+
+export class OrderId extends UniqueId {
+  declare private readonly __brand: "OrderId";
+}
+
+export type OrderStatus = "pending" | "confirmed";
+
+export interface OrderProps {
+  customerEmail: Email;
+  status: OrderStatus;
+}
+
 type OrderConfirmed = DomainEvent<"order.confirmed", { confirmedAt: string }>;
 
 export class Order extends AggregateRoot<OrderProps, OrderId, OrderConfirmed> {
@@ -80,13 +107,18 @@ export class Order extends AggregateRoot<OrderProps, OrderId, OrderConfirmed> {
     super(props, id);
   }
 
-  static create(input: CreateOrderInput): Result<Order, ValidationError> {
-    // validate with Guard / VOs, then:
-    // const order = new Order(props, OrderId.generate()); order.addDomainEvent(...); return Result.ok(order);
+  static create(input: { customerEmail: string }): Result<Order, ValidationError> {
+    return Email.create(input.customerEmail, { field: "customerEmail" }).map(
+      (customerEmail) => new Order({ customerEmail, status: "pending" }, OrderId.generate()),
+    );
   }
 
   static restore(props: OrderProps, id: OrderId): Order {
     return new Order(props, id);
+  }
+
+  get status(): OrderStatus {
+    return this.props.status;
   }
 
   confirm(now: Date): Result<void, ConflictError> {
@@ -94,7 +126,14 @@ export class Order extends AggregateRoot<OrderProps, OrderId, OrderConfirmed> {
       return Result.fail(new ConflictError("Order is not pending", { code: "ORDER_NOT_PENDING" }));
     }
     this.props.status = "confirmed";
-    this.addDomainEvent(createDomainEvent({ name: "order.confirmed", aggregateId: this.id.value, occurredAt: now, payload: { confirmedAt: now.toISOString() } }));
+    this.addDomainEvent(
+      createDomainEvent({
+        name: "order.confirmed",
+        aggregateId: this.id.value,
+        occurredAt: now,
+        payload: { confirmedAt: now.toISOString() },
+      }),
+    );
     return Result.ok();
   }
 }
@@ -105,7 +144,23 @@ Entities are equal when they share class and id. `pullDomainEvents()` returns an
 ## Use case template
 
 ```ts
-export class ConfirmOrderUseCase extends BaseUseCase<{ orderId: string }, void, ValidationError | NotFoundError | ConflictError> {
+// file: confirm-order.usecase.ts
+import {
+  BaseUseCase,
+  type Clock,
+  type ConflictError,
+  type DomainEventPublisher,
+  type FindByIdRepository,
+  NotFoundError,
+  Result,
+  type UpdateRepository,
+  type ValidationError,
+} from "core-kernel";
+import { type Order, OrderId } from "./order.entity.js";
+
+type ConfirmOrderError = ValidationError | NotFoundError | ConflictError;
+
+export class ConfirmOrderUseCase extends BaseUseCase<{ orderId: string }, void, ConfirmOrderError> {
   constructor(
     private readonly orders: FindByIdRepository<Order> & UpdateRepository<Order>,
     private readonly events: DomainEventPublisher,
@@ -114,7 +169,7 @@ export class ConfirmOrderUseCase extends BaseUseCase<{ orderId: string }, void, 
     super();
   }
 
-  protected async handle({ orderId }: { orderId: string }) {
+  protected async handle({ orderId }: { orderId: string }): Promise<Result<void, ConfirmOrderError>> {
     const id = OrderId.from(orderId);
     if (id.isFail()) return id;
     const order = await this.orders.findById(id.value);
@@ -126,18 +181,58 @@ export class ConfirmOrderUseCase extends BaseUseCase<{ orderId: string }, void, 
     return Result.ok();
   }
 }
-// execute(input): Promise<Result<void, ValidationError | NotFoundError | ConflictError | UnexpectedError>>
+// execute(input): Promise<Result<void, ConfirmOrderError | UnexpectedError>> — never rejects
 ```
 
-## Testing
+## Testing template
 
 ```ts
-const orders = new InMemoryRepository<Order>([order]);   // extend it to add custom queries with this.find / this.filter
-orders.failNext(new Error("db down"));                    // next call throws → UnexpectedError in BaseUseCase
-const restoreIds = new SequentialIdGenerator("order").install(); // ids: order-1, order-2... (event ids share the sequence)
-assertOk(result);              // narrows to Ok
-assertFail(result, "CODE");    // narrows to Fail; CODE matches error.code or any validation issue code
+// file: confirm-order.usecase.test.ts
+import { describe, expect, it } from "bun:test";
+import {
+  assertFail,
+  assertOk,
+  FixedClock,
+  InMemoryEventPublisher,
+  InMemoryRepository,
+} from "core-kernel/testing";
+import { ConfirmOrderUseCase } from "./confirm-order.usecase.js";
+import { Order } from "./order.entity.js";
+
+const createSut = () => {
+  const order = Order.create({ customerEmail: "ana@example.com" }).unwrap();
+  const orders = new InMemoryRepository<Order>([order]);
+  const events = new InMemoryEventPublisher();
+  const useCase = new ConfirmOrderUseCase(orders, events, new FixedClock("2026-01-01T00:00:00Z"));
+  return { order, orders, events, useCase };
+};
+
+describe("ConfirmOrderUseCase", () => {
+  it("confirms and publishes the event", async () => {
+    const { order, events, useCase } = createSut();
+
+    assertOk(await useCase.execute({ orderId: order.id.value }));
+    expect(events.namesOf()).toEqual(["order.confirmed"]);
+  });
+
+  it("returns ORDER_NOT_FOUND for unknown ids", async () => {
+    assertFail(await createSut().useCase.execute({ orderId: "missing" }), "ORDER_NOT_FOUND");
+  });
+
+  it("turns infrastructure errors into UnexpectedError", async () => {
+    const { order, orders, useCase } = createSut();
+    orders.failNext(new Error("db down"));
+
+    assertFail(await useCase.execute({ orderId: order.id.value }), "UNEXPECTED");
+  });
+});
 ```
+
+Other test helpers: `new SequentialIdGenerator("order").install()` makes ids predictable (event ids share the sequence; returns a restore function); `assertFail(result, code)` matches `error.code` or any validation issue code; extend `InMemoryRepository` and use `this.find` / `this.filter` for custom queries.
+
+## Skills
+
+Agent skills with detailed patterns ship in the package: `bunx core-kernel skills add` installs them into `.claude/skills` and/or `.agents/skills` (`skills update`, `skills check`).
 
 ## Optional
 

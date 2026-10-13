@@ -1,0 +1,4 @@
+interface:
+  display_name: "Testes"
+  short_description: "Testes de domínio e use case com core-kernel/testing"
+  default_prompt: "Escreva testes de domínio e de casos de uso com core-kernel/testing (InMemoryRepository, FixedClock, SequentialIdGenerator, InMemoryEventPublisher, assertOk/assertFail), cobrindo sucesso, cada código de falha e falha de infraestrutura."

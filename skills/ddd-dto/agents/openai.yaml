@@ -1,0 +1,4 @@
+interface:
+  display_name: "DTO"
+  short_description: "DTOs de entrada, saída e leitura com o core-kernel"
+  default_prompt: "Crie ou revise DTOs (input/output de use case e DTOs de leitura com paginação) usando só primitivos, com funções explícitas de conversão a partir das entidades."
