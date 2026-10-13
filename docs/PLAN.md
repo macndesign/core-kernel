@@ -178,12 +178,19 @@ Toda fase segue **TDD** com `bun:test` (teste vermelho → implementação) e te
 - **DoD:** um export dummy builda, passa no `attw` e é importado em ESM e CJS.
 
 ### Fase 1 — Result + Errors
-- [ ] `AppError` e subclasses (`ValidationError`, `NotFoundError`, `ConflictError`,
+- [x] `AppError` e subclasses (`ValidationError`, `NotFoundError`, `ConflictError`,
       `ForbiddenError`, `UnexpectedError`).
-- [ ] `Result` (`Ok`/`Fail`, type guards, `map`, `flatMap`, `mapError`, `match`, `unwrap`,
+- [x] `Result` (`Ok`/`Fail`, type guards, `map`, `flatMap`, `mapError`, `match`, `unwrap`,
       `unwrapOr`, `combine`, `try`, `tryAsync`).
-- [ ] Testes de comportamento + testes de tipo (`// @ts-expect-error`).
-- **DoD:** cobertura > 95%; impossível ler `.value` sem narrowing.
+- [x] Testes de comportamento + testes de tipo (`// @ts-expect-error`).
+- **DoD:** cobertura > 95%; impossível ler `.value` sem narrowing. ✅ (100%, 53 testes)
+- Notas de implementação:
+  - `Result` é um tipo união (`Ok | Fail`) + um objeto `Result` com as fábricas; também
+    aceita narrowing por `result.ok`.
+  - `combine` com uma única falha devolve o erro original; com várias falhas só de
+    validação, faz merge das issues; senão devolve a primeira falha não-validação.
+  - `Result.try`/`tryAsync` aceitam um `mapError` opcional (padrão: `UnexpectedError.from`).
+  - Erros serializam via `toJSON()` (`name`, `kind`, `code`, `message`, `details`, `issues`).
 
 ### Fase 2 — Guard
 - [ ] `Guard.required`, `notEmpty`, `minLength`, `maxLength`, `inRange`, `matches`, `oneOf`
@@ -266,5 +273,5 @@ acopladas a caminhos/API do pharmacore).
 |---|---|---|
 | 1 | Nome no npm | **`core-kernel`** (sem escopo). Reservar cedo publicando `0.0.0`, ou usar `@macndesign/core-kernel` se o npm recusar por similaridade |
 | 2 | Repositório retorna `T \| null` ou `Result<T>` | Em aberto — recomendação: `T \| null` |
-| 3 | Idioma da API e dos códigos de erro | Em aberto — recomendação: inglês, mensagens sobrescrevíveis |
+| 3 | Idioma da API e dos códigos de erro | **Inglês** (API, nomes e `code`); mensagens são sobrescrevíveis via construtor |
 | 4 | VOs brasileiros no mesmo pacote (`./vo/br`) ou separado | Em aberto — recomendação: subpath `./vo/br` |
