@@ -1,6 +1,12 @@
 import { type IdGenerator, UniqueId } from "../domain/unique-id.js";
 
-/** Gera `id-1`, `id-2`, ... para asserções previsíveis. */
+/**
+ * Gera `id-1`, `id-2`, ... para asserções previsíveis.
+ *
+ * Depois de `install()`, os ids de eventos de domínio também consomem a sequência: um
+ * agregado criado com um evento usa dois números. Prefira asserções com o id devolvido pelo
+ * use case a ids "adivinhados".
+ */
 export class SequentialIdGenerator implements IdGenerator {
   #count = 0;
 

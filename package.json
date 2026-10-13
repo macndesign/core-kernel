@@ -69,16 +69,17 @@
   },
   "scripts": {
     "build": "bun scripts/build.ts",
-    "test": "bun test",
-    "test:coverage": "bun test --coverage",
+    "test": "bun test ./src",
+    "test:coverage": "bun test --coverage ./src",
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "check:package": "publint --strict && attw --pack . --profile node16 && node scripts/smoke.mjs && node scripts/smoke.cjs",
-    "verify": "bun run lint && bun run typecheck && bun run test:coverage && bun run build && bun run check:package",
+    "verify": "bun run lint && bun run typecheck && bun run test:coverage && bun run build && bun run check:package && bun run check:examples",
     "prepublishOnly": "bun run verify",
-    "prepare": "simple-git-hooks"
+    "prepare": "simple-git-hooks",
+    "check:examples": "tsc -p examples/tsconfig.json && bun test ./examples"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",
