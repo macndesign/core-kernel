@@ -174,7 +174,7 @@ Toda fase segue **TDD** com `bun:test` (teste vermelho → implementação) e te
 - [x] CI (lint → typecheck → test+coverage → build → check:package; smoke em Node 20/22/24)
       e publish por tag `v*.*.*` com `npm publish --provenance`.
 - [x] LICENSE, README, `CLAUDE.md`, `bunfig.toml` (coverage ≥ 95%), `.gitattributes`.
-- [ ] Reservar o nome publicando `0.0.0` no npm (manual, requer sua conta).
+- [x] Reservar o nome publicando `0.0.0` no npm (publicado manualmente em 2026-10-13; validado instalando do registro: ESM, CJS e CLI).
 - **DoD:** um export dummy builda, passa no `attw` e é importado em ESM e CJS.
 
 ### Fase 1 — Result + Errors
