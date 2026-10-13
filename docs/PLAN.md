@@ -125,8 +125,8 @@ class ValidationError extends AppError {
 }
 
 // domain
-abstract class ValueObject<P> { protected constructor(readonly props: P); equals(o): boolean }
-abstract class Entity<P, Id extends Identifier = UniqueId> {
+abstract class ValueObject<T> { readonly value: T; protected constructor(value: T); equals(o): boolean }
+abstract class Entity<P, Id extends UniqueId = UniqueId> {
   readonly id: Id;
   protected props: P;
   protected constructor(props: P, id?: Id);
@@ -144,7 +144,7 @@ interface FindByIdRepository<T> { findById(id: string): Promise<T | null> }
 interface CrudRepository<T> extends CreateRepository<T>, UpdateRepository<T>,
   DeleteRepository<T>, FindByIdRepository<T> {}
 interface Clock { now(): Date }
-interface IdGenerator { generate(): string }
+interface IdGenerator { generate(): string }   // definido em domain/unique-id.ts
 ```
 
 Convenções arquiteturais (herdadas de `pharmacore/docs/project/coding-standards.md`):
@@ -202,8 +202,18 @@ Toda fase segue **TDD** com `bun:test` (teste vermelho → implementação) e te
   do `Money` (centavos) da Fase 6.
 
 ### Fase 3 — Identifier + ValueObject
-- [ ] `Identifier` / `UniqueId` com gerador plugável (padrão `crypto.randomUUID`).
-- [ ] `ValueObject` congelado, igualdade estrutural profunda, brand em vez de `instanceof`.
+- [x] `UniqueId` com gerador plugável (`UniqueId.useGenerator`, padrão `crypto.randomUUID`).
+- [x] `ValueObject` congelado, igualdade estrutural profunda, brand em vez de `instanceof`.
+- Notas de implementação:
+  - O campo é `value` (não `props`), como no pharmacore e no shift-swap: `email.value`.
+  - Sem classe `Identifier` separada: `UniqueId` é subclassável e ids tipados são
+    subclasses com brand (`declare private readonly __brand: "OrderId"`), que o compilador
+    não deixa misturar e que não são iguais entre si em runtime.
+  - `UniqueId.from(raw)` aceita qualquer string não vazia (UUID, cuid, id do BetterAuth...).
+  - O VO não congela `this` (quebraria campos de subclasses com ES2022 class fields); o
+    `value` é não-gravável e copiado + congelado em profundidade (objetos simples, arrays,
+    `Date`). Instâncias de outras classes são guardadas por referência.
+  - `IdGenerator` nasceu aqui; a Fase 5 reaproveita a mesma interface como port.
 
 ### Fase 4 — Entity, AggregateRoot e DomainEvent
 - [ ] `Entity` com igualdade por id e convenção `create`/`restore`.
