@@ -1,0 +1,145 @@
+# core-kernel
+
+> Zero-dependency TypeScript building blocks for DDD / Clean Architecture on Bun and Node ≥ 20 (ESM + CJS, TypeScript ≥ 5.4). Business rules return `Result<T, E>` with typed errors instead of throwing.
+
+Rules an assistant must follow when writing code with core-kernel:
+
+- Never throw for expected failures. Return `Result.fail(new XxxError(...))`. `throw` is only for API misuse or bugs.
+- Read `result.value` / `result.error` only after narrowing: `if (r.isFail()) return r;` then `r.value`. `if (!r.ok)` also narrows.
+- A `Fail<E>` can be returned as any `Result<U, E'>` when `E` is part of `E'`, so propagate failures with `return r`.
+- Entities and value objects have a `private constructor` and a `static create(...)` returning `Result`. Entities also have `static restore(props, id)` for rehydration (no validation, no events).
+- State changes only through domain methods that return `Result<void, ...>`. No setters, no public `props`.
+- Repositories return `T | null` and throw on infrastructure failure. Use cases turn `null` into `NotFoundError`. Extend `BaseUseCase` so thrown errors become `UnexpectedError`.
+- Repositories hold writes + `findById` only. Screen/list reads go through query ports that return DTOs.
+- Inject `Clock` instead of calling `new Date()` in use cases. Pass `now` into domain methods.
+- Depend on the narrowest port: `FindByIdRepository<Order> & UpdateRepository<Order>`, not a full CRUD interface.
+- Use typed ids: `class OrderId extends UniqueId { declare private readonly __brand: "OrderId" }`.
+- Libraries built on core-kernel list it as a `peerDependency`.
+
+## Imports
+
+- `core-kernel`: Result, Ok, Fail, AppError, ValidationError, NotFoundError, ConflictError, ForbiddenError, UnexpectedError, isAppError, Guard, ValueObject, isValueObject, Entity, isEntity, AggregateRoot, UniqueId, IdGenerator, DomainEvent, createDomainEvent, Auditable, UseCase, BaseUseCase, CreateRepository, UpdateRepository, DeleteRepository, FindByIdRepository, CrudRepository, EntityId, Clock, systemClock, DomainEventPublisher, Mapper, PaginatedInputDTO, PaginationMetaDTO, PaginatedResultDTO, validatePagination, toPaginatedResult
+- `core-kernel/vo`: Email, Text, Url, Money, DateRange, StrongPassword
+- `core-kernel/vo/br`: Cpf, Cnpj (numeric and alphanumeric, IN RFB 2.229/2024)
+- `core-kernel/testing`: InMemoryRepository, FixedClock, SequentialIdGenerator, InMemoryEventPublisher, assertOk, assertFail
+
+## Result
+
+```ts
+type Result<T, E extends AppError = AppError> = Ok<T, E> | Fail<E>;
+Result.ok(value) / Result.ok()                     // Result<T, never> / Result<void, never>
+Result.fail(error)                                 // Result<never, E>
+r.isOk() / r.isFail() / r.ok                       // narrowing
+r.map(fn) / r.flatMap(fn) / r.mapError(fn) / r.match({ ok, fail }) / r.unwrapOr(x)
+r.unwrap()                                         // throws the error: tests and app edges only
+Result.combine([a, b] as const)                    // Result<[A, B], EA | EB>; merges ValidationError issues
+Result.try(fn, mapError?) / Result.tryAsync(fn, mapError?)  // thrown → UnexpectedError (cause kept)
+```
+
+## Errors
+
+```ts
+new NotFoundError("Order not found", { code: "ORDER_NOT_FOUND", details?, cause? })
+new ValidationError({ field: "email", code: "INVALID_EMAIL", message: "..." })   // or an array of issues
+error.kind  // "validation" | "not_found" | "conflict" | "forbidden" | "unexpected" → adapters map to HTTP etc.
+error.code  // stable machine-readable code; error.toJSON() for responses/logs
+```
+
+## Guard
+
+All return `Result<void, ValidationError>` and accept `{ field?, code?, message? }`:
+`required`, `notEmpty`, `minLength`, `maxLength`, `inRange(value, { min?, max? })`, `integer`, `matches(value, regex)`, `oneOf(value, list)`.
+`Guard.all([...])` accumulates every issue; `a.flatMap(() => b)` stops at the first failure.
+
+## Value object template
+
+```ts
+export class Sku extends ValueObject<string> {
+  private constructor(value: string) {
+    super(value);
+  }
+
+  static create(raw: string, field = "sku"): Result<Sku, ValidationError> {
+    const value = raw.trim().toUpperCase();
+    return Guard.notEmpty(value, { field })
+      .flatMap(() => Guard.matches(value, /^[A-Z0-9-]+$/, { field, code: "INVALID_SKU" }))
+      .map(() => new Sku(value));
+  }
+}
+```
+
+`value` is deep-frozen; `equals` compares structure (same class only); `toJSON()` returns `value`.
+
+## Aggregate template
+
+```ts
+type OrderConfirmed = DomainEvent<"order.confirmed", { confirmedAt: string }>;
+
+export class Order extends AggregateRoot<OrderProps, OrderId, OrderConfirmed> {
+  private constructor(props: OrderProps, id: OrderId) {
+    super(props, id);
+  }
+
+  static create(input: CreateOrderInput): Result<Order, ValidationError> {
+    // validate with Guard / VOs, then:
+    // const order = new Order(props, OrderId.generate()); order.addDomainEvent(...); return Result.ok(order);
+  }
+
+  static restore(props: OrderProps, id: OrderId): Order {
+    return new Order(props, id);
+  }
+
+  confirm(now: Date): Result<void, ConflictError> {
+    if (this.props.status !== "pending") {
+      return Result.fail(new ConflictError("Order is not pending", { code: "ORDER_NOT_PENDING" }));
+    }
+    this.props.status = "confirmed";
+    this.addDomainEvent(createDomainEvent({ name: "order.confirmed", aggregateId: this.id.value, occurredAt: now, payload: { confirmedAt: now.toISOString() } }));
+    return Result.ok();
+  }
+}
+```
+
+Entities are equal when they share class and id. `pullDomainEvents()` returns and clears pending events.
+
+## Use case template
+
+```ts
+export class ConfirmOrderUseCase extends BaseUseCase<{ orderId: string }, void, ValidationError | NotFoundError | ConflictError> {
+  constructor(
+    private readonly orders: FindByIdRepository<Order> & UpdateRepository<Order>,
+    private readonly events: DomainEventPublisher,
+    private readonly clock: Clock,
+  ) {
+    super();
+  }
+
+  protected async handle({ orderId }: { orderId: string }) {
+    const id = OrderId.from(orderId);
+    if (id.isFail()) return id;
+    const order = await this.orders.findById(id.value);
+    if (!order) return Result.fail(new NotFoundError("Order not found", { code: "ORDER_NOT_FOUND" }));
+    const confirmed = order.confirm(this.clock.now());
+    if (confirmed.isFail()) return confirmed;
+    await this.orders.update(order);
+    await this.events.publish(order.pullDomainEvents());
+    return Result.ok();
+  }
+}
+// execute(input): Promise<Result<void, ValidationError | NotFoundError | ConflictError | UnexpectedError>>
+```
+
+## Testing
+
+```ts
+const orders = new InMemoryRepository<Order>([order]);   // extend it to add custom queries with this.find / this.filter
+orders.failNext(new Error("db down"));                    // next call throws → UnexpectedError in BaseUseCase
+const restoreIds = new SequentialIdGenerator("order").install(); // ids: order-1, order-2... (event ids share the sequence)
+assertOk(result);              // narrows to Ok
+assertFail(result, "CODE");    // narrows to Fail; CODE matches error.code or any validation issue code
+```
+
+## Optional
+
+- Full example (not shipped in the npm package; see `examples/order` in the source repository): aggregate, composite VO, events, repository and query ports, use cases, mapper, tests.
+- README.md (shipped): guide in Portuguese.

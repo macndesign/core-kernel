@@ -18,6 +18,8 @@ jobs:
       - run: bun run build
       - run: bun run check:package
       - run: bun run check:examples
+      # Tipos publicados funcionam para consumidores com o TypeScript mínimo suportado.
+      - run: bun run check:ts-compat
       - uses: actions/upload-artifact@v4
         with:
           name: dist

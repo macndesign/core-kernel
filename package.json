@@ -19,7 +19,8 @@
     "node": ">=20"
   },
   "files": [
-    "dist"
+    "dist",
+    "llms.txt"
   ],
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
@@ -79,7 +80,8 @@
     "verify": "bun run lint && bun run typecheck && bun run test:coverage && bun run build && bun run check:package && bun run check:examples",
     "prepublishOnly": "bun run verify",
     "prepare": "simple-git-hooks",
-    "check:examples": "tsc -p examples/tsconfig.json && bun test ./examples"
+    "check:examples": "tsc -p examples/tsconfig.json && bun test ./examples",
+    "check:ts-compat": "bunx -p typescript@5.4.5 tsc -p examples/tsconfig.json"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",

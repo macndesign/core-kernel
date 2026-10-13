@@ -282,10 +282,21 @@ Toda fase segue **TDD** com `bun:test` (teste vermelho → implementação) e te
   - `assertFail(result, code)` aceita o `code` do erro ou de uma issue de validação.
 
 ### Fase 8 — Documentação e exemplo
-- [ ] `examples/` com mini domínio (`Order`: create, eventos, use case) que funciona como
+- [x] `examples/order` com mini domínio (agregado + VO composto + eventos, ports de
+      repositório e de query, use cases place/confirm/list, mapper, testes) que funciona como
       teste de integração da API pública.
-- [ ] README: instalação, conceitos, receita por bloco, convenções.
-- [ ] `llms.txt` com resumo da API para LLMs.
+- [x] README: instalação, conceitos, receita por bloco, convenções.
+- [x] `llms.txt` com resumo da API para LLMs (publicado no pacote).
+- Notas de implementação:
+  - O exemplo importa `core-kernel` pelo nome do pacote, então compila e roda contra o
+    `dist` buildado (`check:examples`, no `verify` e no CI). Também é checado com
+    TypeScript 5.4 (`check:ts-compat`, no CI), a versão mínima declarada no README.
+  - **O exemplo encontrou um problema de API**: `if (r.isFail()) return r;` não compilava
+    quando o tipo de sucesso mudava. `Fail<T, E>` virou `Fail<E>` (commit `fe682ab`,
+    breaking change), validado em TS 5.4, 5.9 e 7.
+  - Ids de eventos consomem a sequência do `SequentialIdGenerator`; documentado.
+  - Pendente para a 8b: os templates de código do `llms.txt` ainda não são checados pelo
+    `tsc` (entram no mesmo mecanismo das references das skills).
 
 ### Fase 8b — Recursos para LLMs
 Base: skills do pharmacore (`.claude/skills` e `.agents/skills`, hoje cópias idênticas e
