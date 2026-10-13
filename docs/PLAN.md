@@ -193,9 +193,13 @@ Toda fase segue **TDD** com `bun:test` (teste vermelho → implementação) e te
   - Erros serializam via `toJSON()` (`name`, `kind`, `code`, `message`, `details`, `issues`).
 
 ### Fase 2 — Guard
-- [ ] `Guard.required`, `notEmpty`, `minLength`, `maxLength`, `inRange`, `matches`, `oneOf`
+- [x] `Guard.required`, `notEmpty`, `minLength`, `maxLength`, `inRange`, `integer`, `matches`, `oneOf`
       → `Result<void, ValidationError>`.
-- [ ] `Guard.all([...])` agregando *issues* de vários campos.
+- [x] `Guard.all([...])` agregando *issues* de vários campos.
+- Notas: todo guard aceita `{ field, code, message }` para personalizar a issue (ex.:
+  `code: "INVALID_EMAIL"`, mensagem traduzida). `Guard.all` acumula; `flatMap` para na
+  primeira falha. Guards só verificam — normalização é do VO. `integer` entrou por causa
+  do `Money` (centavos) da Fase 6.
 
 ### Fase 3 — Identifier + ValueObject
 - [ ] `Identifier` / `UniqueId` com gerador plugável (padrão `crypto.randomUUID`).
