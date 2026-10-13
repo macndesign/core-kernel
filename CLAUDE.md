@@ -89,6 +89,23 @@ resolver isso.
 - Em `it.each` com arrays, embrulhe cada linha numa tupla (`[[[]], [[1]]]`): o Bun espalha
   arrays como argumentos.
 
+## Release (Changesets)
+
+1. **Todo PR com mudança visível para quem usa a lib** inclui um changeset: `bun run changeset`
+   (ou um arquivo `.changeset/<nome>.md` com o frontmatter `"core-kernel": patch|minor`).
+   Em 0.x, mudança incompatível é **minor**.
+2. Para lançar: `bun run version-packages` aplica os changesets, atualiza a versão e o
+   `CHANGELOG.md`. Commit: `chore: release vX.Y.Z`.
+3. `git tag vX.Y.Z && git push origin main --tags` → o `publish.yml` confere se a tag bate com
+   o `package.json`, roda o `verify` e publica com provenance. Prerelease (`-beta.N`) vai
+   para a dist-tag `beta`, nunca para `latest`. Requer o secret `NPM_TOKEN` no GitHub.
+
+Modo pré-release: enquanto `.changeset/pre.json` existir, as versões saem como `-beta.N`, e os
+changesets consumidos ficam em `.changeset/pre/` (vão para o git). Para a versão estável:
+`bunx changeset pre exit` e depois `bun run version-packages`.
+
+Nunca envie uma tag de versão já publicada (ex.: `v0.0.0`, publicada manualmente).
+
 ## Comandos
 
 ```bash

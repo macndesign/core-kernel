@@ -1,6 +1,6 @@
 {
   "name": "core-kernel",
-  "version": "0.0.0",
+  "version": "0.1.0-beta.0",
   "description": "Blocos base de DDD/Clean Architecture (Result, Entity, ValueObject, UseCase, ports) para Bun e Node",
   "keywords": [
     "ddd",
@@ -29,7 +29,8 @@
   "files": [
     "dist",
     "skills",
-    "llms.txt"
+    "llms.txt",
+    "CHANGELOG.md"
   ],
   "bin": {
     "core-kernel": "./dist/cli/index.js"
@@ -94,11 +95,14 @@
     "prepare": "node scripts/prepare.mjs",
     "check:examples": "tsc -p examples/tsconfig.json && bun test ./examples",
     "check:ts-compat": "bunx -p typescript@5.4.5 tsc -p examples/tsconfig.json",
-    "check:skills": "bun scripts/check-skills.ts"
+    "check:skills": "bun scripts/check-skills.ts",
+    "changeset": "changeset",
+    "version-packages": "changeset version"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",
     "@biomejs/biome": "^2.5.15",
+    "@changesets/cli": "^3.0.3",
     "@types/bun": "^1.4.3",
     "@types/node": "^20",
     "lint-staged": "^17.6.0",

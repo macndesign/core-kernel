@@ -16,8 +16,11 @@ frameworks, banco e UI — em **Bun** e **Node ≥ 20**, para backend, web, mobi
 ## Instalação
 
 ```bash
-bun add core-kernel
+bun add core-kernel@beta
 ```
+
+Enquanto a primeira versão estável não sai, use a dist-tag `beta` (a `latest` aponta para a
+`0.0.0`, que só reserva o nome). O histórico de mudanças está no [CHANGELOG](./CHANGELOG.md).
 
 | Import | Conteúdo |
 |---|---|

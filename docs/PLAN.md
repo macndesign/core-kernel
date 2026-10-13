@@ -339,10 +339,15 @@ acopladas a caminhos/API do pharmacore).
   (corrigido com `scripts/prepare.mjs`).
 
 ### Fase 9 — Release
-- [ ] Changesets para SemVer; permanecer em 0.x até a API estabilizar.
-- [ ] Publicar `0.1.0-beta` e validar o tarball (`npm pack`) em consumidores Node ESM,
-      Node CJS e Bun.
-- [ ] Publicar com `npm publish --provenance` no CI.
+- [x] Changesets (v3) para SemVer; modo pré-release `beta`; versão `0.1.0-beta.0` gerada
+      com CHANGELOG (publicado no pacote). Fluxo documentado no `CLAUDE.md`.
+- [x] `publish.yml`: confere tag × versão do `package.json` e publica prerelease na dist-tag
+      do identificador (`beta`), nunca em `latest`.
+- [x] Nome reservado: `0.0.0` publicado manualmente e validado instalando do registro
+      (ESM, CJS, CLI).
+- [ ] Cadastrar o secret `NPM_TOKEN` no GitHub (você).
+- [ ] Publicar `0.1.0-beta.0` (tag `v0.1.0-beta.0` → CI com provenance, ou manual com
+      `npm publish --tag beta`) e validar instalando do registro em Node ESM, CJS e Bun.
 
 ### Fase 10 — Migração piloto
 - [ ] shift-swap: substituir `src/shared/*` e ajustar use cases ao `Result` tipado.

@@ -19,9 +19,23 @@ jobs:
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
+
+      # A tag precisa bater com a versão do package.json (ex.: v0.1.0-beta.0 ↔ 0.1.0-beta.0).
+      # Prerelease publica na dist-tag do identificador (beta, rc...), nunca em latest.
+      - id: release
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if [ "v$VERSION" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME não corresponde à versão $VERSION do package.json"
+            exit 1
+          fi
+          DIST_TAG=$(node -p "const p = '$VERSION'.split('-')[1]; p ? p.split('.')[0] : 'latest'")
+          echo "dist_tag=$DIST_TAG" >> "$GITHUB_OUTPUT"
+          echo "Publicando $VERSION com a dist-tag $DIST_TAG"
+
       - run: bun install --frozen-lockfile
       - run: bun run verify
       # npm (não bun publish) porque só o npm CLI gera atestado de provenance.
-      - run: npm publish --provenance --access public --ignore-scripts
+      - run: npm publish --provenance --access public --ignore-scripts --tag ${{ steps.release.outputs.dist_tag }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
