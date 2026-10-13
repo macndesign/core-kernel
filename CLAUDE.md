@@ -65,6 +65,11 @@ resolver isso.
 - Cobertura mínima de 95% (`bunfig.toml`). O `test:coverage` falha abaixo disso.
 - Para garantias de tipo (ex.: não dá para ler `.value` sem narrowing), use `// @ts-expect-error`
   nos testes. O `typecheck` valida.
+- **Inicialize campos de classe no construtor, não na declaração** (`#x = []`). O coverage do
+  Bun conta o inicializador como uma função à parte que nunca marca como executada, e o
+  arquivo cai abaixo do limite mesmo com 100% das linhas cobertas.
+- Em `it.each` com arrays, embrulhe cada linha numa tupla (`[[[]], [[1]]]`): o Bun espalha
+  arrays como argumentos.
 
 ## Comandos
 

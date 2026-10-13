@@ -216,10 +216,20 @@ Toda fase segue **TDD** com `bun:test` (teste vermelho → implementação) e te
   - `IdGenerator` nasceu aqui; a Fase 5 reaproveita a mesma interface como port.
 
 ### Fase 4 — Entity, AggregateRoot e DomainEvent
-- [ ] `Entity` com igualdade por id e convenção `create`/`restore`.
-- [ ] `DomainEvent` (`name`, `occurredAt`, `aggregateId`, `payload`) e `AggregateRoot`
-      com `addDomainEvent`/`pullDomainEvents`.
-- [ ] Interface opcional `Auditable` (`createdAt`, `updatedAt`, `deletedAt`).
+- [x] `Entity` com igualdade por id e convenção `create`/`restore`.
+- [x] `DomainEvent` (`id`, `name`, `occurredAt`, `aggregateId`, `payload`) + `createDomainEvent`
+      e `AggregateRoot` com `addDomainEvent`/`pullDomainEvents`/`domainEvents`.
+- [x] Interface opcional `Auditable` (`createdAt`, `updatedAt`, `deletedAt`).
+- Notas de implementação:
+  - O construtor exige o `id`: a base não sabe qual subclasse de id gerar, então o
+    `create` da entidade faz `OrderId.generate()` explicitamente.
+  - `props` é `protected readonly` (a referência não muda; os métodos de domínio alteram
+    campos) e é copiada rasa no construtor.
+  - Igualdade exige mesma classe + mesmo id.
+  - `AggregateRoot<P, Id, E>`: `E` é a união tipada dos eventos do agregado.
+  - Eventos ganharam `id` (para idempotência/outbox), gerado pelo gerador do `UniqueId`.
+  - Sem `toJSON` em entidades: a conversão para DTO/persistência é explícita via `Mapper`
+    (Fase 5), para não vazar estado interno.
 
 ### Fase 5 — Camada de aplicação
 - [ ] `UseCase<I, O, E>` (interface + base abstrata opcional).
