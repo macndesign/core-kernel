@@ -68,6 +68,8 @@ resolver isso.
 - O limite de cobertura vale só para **linhas** (`bunfig.toml`). A métrica de funções do Bun
   tem falsos negativos (construtores implícitos, inicializadores de campo); não escreva código
   artificial para satisfazê-la.
+- Asserções de promise precisam de `await` (`await expect(p).rejects...`); sem ele o teste
+  termina antes e passa mesmo se a asserção falhar.
 - Em `it.each` com arrays, embrulhe cada linha numa tupla (`[[[]], [[1]]]`): o Bun espalha
   arrays como argumentos.
 

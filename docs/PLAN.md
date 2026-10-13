@@ -270,8 +270,16 @@ Toda fase segue **TDD** com `bun:test` (teste vermelho → implementação) e te
     `ValidationError` de `core-kernel` (justificativa do build sem bundler).
 
 ### Fase 7 — Kit de testes (`./testing`)
-- [ ] `InMemoryRepository<T>` (baseado em `Map`), `FixedClock`, `SequentialIdGenerator`.
-- [ ] `assertOk(result)` / `assertFail(result, code?)` com narrowing, sem depender de runner.
+- [x] `InMemoryRepository<T>` (baseado em `Map`), `FixedClock`, `SequentialIdGenerator`,
+      `InMemoryEventPublisher`.
+- [x] `assertOk(result)` / `assertFail(result, code?)` com narrowing, sem depender de runner.
+- Notas de implementação:
+  - `InMemoryRepository` imita um banco: `create` duplicado e `update` inexistente lançam;
+    `failNext(error)` simula falha de infraestrutura na próxima operação (para testar o
+    caminho `UnexpectedError`); subclasses implementam queries com `find`/`filter`.
+  - `SequentialIdGenerator.install()` troca o gerador do `UniqueId` e devolve o restore.
+  - `InMemoryEventPublisher` entrou por ser o dublê natural do port `DomainEventPublisher`.
+  - `assertFail(result, code)` aceita o `code` do erro ou de uma issue de validação.
 
 ### Fase 8 — Documentação e exemplo
 - [ ] `examples/` com mini domínio (`Order`: create, eventos, use case) que funciona como
