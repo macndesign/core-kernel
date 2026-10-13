@@ -77,7 +77,7 @@ core-kernel/
 Testes ficam em `__tests__/` ao lado do código. Arquivos em kebab-case com sufixo do tipo
 (`*.vo.ts`, `*.entity.ts`, `*.usecase.ts`, `*.repository.ts`).
 
-`package.json` (essencial):
+`package.json` (essencial; versão real no repositório):
 
 ```jsonc
 {
@@ -85,16 +85,22 @@ Testes ficam em `__tests__/` ao lado do código. Arquivos em kebab-case com sufi
   "type": "module",
   "sideEffects": false,
   "engines": { "node": ">=20" },
-  "files": ["dist", "skills", "llms.txt"],
-  "bin": { "core-kernel": "./dist/cli.js" },
+  "files": ["dist"],                       // + "skills", "llms.txt" na Fase 8b
+  // "bin": { "core-kernel": ... }          // entra na Fase 8b, junto com o CLI de skills
   "exports": {
-    ".":         { "types": "./dist/index.d.ts",         "import": "./dist/index.js",         "require": "./dist/index.cjs" },
-    "./vo":      { "types": "./dist/vo/index.d.ts",      "import": "./dist/vo/index.js",      "require": "./dist/vo/index.cjs" },
-    "./vo/br":   { "types": "./dist/vo/br/index.d.ts",   "import": "./dist/vo/br/index.js",   "require": "./dist/vo/br/index.cjs" },
-    "./testing": { "types": "./dist/testing/index.d.ts", "import": "./dist/testing/index.js", "require": "./dist/testing/index.cjs" }
+    ".": {
+      "import":  { "types": "./dist/esm/index.d.ts", "default": "./dist/esm/index.js" },
+      "require": { "types": "./dist/cjs/index.d.ts", "default": "./dist/cjs/index.js" }
+    }
+    // idem para "./vo", "./vo/br", "./testing"
   }
 }
 ```
+
+Build: `tsc` duas vezes (ESM em `dist/esm`, CJS em `dist/cjs` com `package.json`
+`"type": "commonjs"`), **sem bundler**, emitindo um arquivo por módulo. Um bundler
+(`bun build`, como no shift-swap) duplicaria o código compartilhado em cada subpath e
+quebraria a identidade das classes entre `core-kernel` e `core-kernel/vo`.
 
 ## 4. Esboço das APIs principais
 
@@ -155,16 +161,20 @@ Toda fase segue **TDD** com `bun:test` (teste vermelho → implementação) e te
 `bun run lint`, `bun test`, `tsc --noEmit` e `bun run build` verdes.
 
 ### Fase 0 — Fundação do repositório
-- [ ] `bun init`; `package.json` com `type: module`, `files`, `exports`, `sideEffects`,
-      `engines`, `bin`.
-- [ ] `tsconfig.json` (strict, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`,
-      `target ES2022`) + `tsconfig.build.json` excluindo testes.
-- [ ] Biome + `simple-git-hooks` + `lint-staged` (copiar do shift-swap).
-- [ ] Scripts de build ESM/CJS/d.ts com múltiplas entrypoints (`index`, `vo`, `vo/br`,
-      `testing`, `cli`).
-- [ ] `publint` + `@arethetypeswrong/cli` em `check:package`.
-- [ ] CI (lint → test com coverage → build → check:package) e publish por tag `v*.*.*`.
-- [ ] LICENSE, README, `CLAUDE.md` com convenções.
+- [x] `package.json` com `type: module`, `files`, `exports` (import/require com types
+      próprios), `sideEffects`, `engines`. (`bin` adiado para a Fase 8b.)
+- [x] `tsconfig.json` (strict, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`,
+      `NodeNext`, `ES2022`) + `tsconfig.esm.json` / `tsconfig.cjs.json` excluindo testes
+      e sem tipos de Bun/Node (garante código agnóstico de runtime).
+- [x] Biome + `simple-git-hooks` + `lint-staged` via `prepare` (não `postinstall`, que
+      iria no pacote publicado e quebraria a instalação dos consumidores).
+- [x] Build dual ESM/CJS com `tsc` (`scripts/build.ts`) para `index`, `vo`, `vo/br`,
+      `testing`.
+- [x] `check:package`: `publint --strict` + `attw` + smoke test ESM/CJS.
+- [x] CI (lint → typecheck → test+coverage → build → check:package; smoke em Node 20/22/24)
+      e publish por tag `v*.*.*` com `npm publish --provenance`.
+- [x] LICENSE, README, `CLAUDE.md`, `bunfig.toml` (coverage ≥ 95%), `.gitattributes`.
+- [ ] Reservar o nome publicando `0.0.0` no npm (manual, requer sua conta).
 - **DoD:** um export dummy builda, passa no `attw` e é importado em ESM e CJS.
 
 ### Fase 1 — Result + Errors
