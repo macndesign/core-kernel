@@ -11,16 +11,16 @@ frameworks, banco e UI — em **Bun** e **Node ≥ 20**, para backend, web, mobi
 - Skills para assistentes de código (Claude Code, Codex...) que ensinam os padrões da lib
 - Zero dependências de runtime · ESM e CommonJS · TypeScript ≥ 5.4
 
-> 🚧 Versão 0.x: a API ainda pode mudar entre versões menores.
+> Versão 0.x: mudanças incompatíveis podem sair em versões *minor* (0.1 → 0.2), sempre
+> descritas no CHANGELOG.
 
 ## Instalação
 
 ```bash
-bun add core-kernel@beta
+bun add core-kernel
 ```
 
-Enquanto a primeira versão estável não sai, use a dist-tag `beta` (a `latest` aponta para a
-`0.0.0`, que só reserva o nome). O histórico de mudanças está no [CHANGELOG](./CHANGELOG.md).
+O histórico de mudanças está no [CHANGELOG](./CHANGELOG.md).
 
 | Import | Conteúdo |
 |---|---|

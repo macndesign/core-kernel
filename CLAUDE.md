@@ -100,11 +100,14 @@ resolver isso.
    o `package.json`, roda o `verify` e publica com provenance. Prerelease (`-beta.N`) vai
    para a dist-tag `beta`, nunca para `latest`. Requer o secret `NPM_TOKEN` no GitHub.
 
-Modo pré-release: enquanto `.changeset/pre.json` existir, as versões saem como `-beta.N`, e os
-changesets consumidos ficam em `.changeset/pre/` (vão para o git). Para a versão estável:
-`bunx changeset pre exit` e depois `bun run version-packages`.
+Pré-release (opcional, para testar mudanças grandes): `bunx changeset pre enter beta` antes do
+`version-packages`; enquanto `.changeset/pre.json` existir, as versões saem como `-beta.N` e os
+changesets consumidos ficam em `.changeset/pre/` (vão para o git). Para voltar ao normal:
+`bunx changeset pre exit` e `bun run version-packages`.
 
 Nunca envie uma tag de versão já publicada (ex.: `v0.0.0`, publicada manualmente).
+Logo após publicar, o registro do npm pode responder com cache antigo por alguns minutos:
+confira em npmjs.com antes de concluir que algo falhou.
 
 ## Comandos
 

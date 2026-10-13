@@ -350,6 +350,8 @@ acopladas a caminhos/API do pharmacore).
       do registro: Node ESM, CJS, Bun, CLI de skills e `npm audit signatures` (assinatura e
       atestado de provenance verificados). Dist-tags: `latest` = 0.0.0, `beta` = 0.1.0-beta.0.
       Obs.: logo após o publish, o registro pode responder com cache antigo por alguns minutos.
+- [x] Lançar a `0.1.0` (saída do modo beta) como `latest`, antes da migração: em 0.x, ajustes
+      incompatíveis que a migração revelar saem como `0.2.0`.
 
 ### Fase 10 — Migração piloto
 - [ ] shift-swap: substituir `src/shared/*` e ajustar use cases ao `Result` tipado.
