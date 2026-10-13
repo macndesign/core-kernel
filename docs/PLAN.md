@@ -62,8 +62,8 @@ core-kernel/
                            domain-event-publisher.ts
       dto/                 pagination.dto.ts
       mapper.ts
-    vo/                    email, text, url, money, positive-number, date-range (./vo)
-      br/                  cpf, cnpj, strong-password (./vo/br)
+    vo/                    email, text, url, money, date-range, strong-password (./vo)
+      br/                  cpf, cnpj (./vo/br)
     testing/               in-memory.repository.ts, fixed.clock.ts,
                            sequential-id.generator.ts, result-asserts.ts (./testing)
     cli/                   skills.ts (bin, entry separado)
@@ -248,10 +248,26 @@ Toda fase segue **TDD** com `bun:test` (teste vermelho → implementação) e te
     negativos (construtores implícitos e inicializadores de campo).
 
 ### Fase 6 — VOs comuns (`./vo`, `./vo/br`)
-- [ ] Genéricos: `Email`, `Text`, `Url`, `Money` (centavos inteiros + moeda),
-      `PositiveNumber`, `DateRange`.
-- [ ] BR: `Cpf`, `Cnpj`, `StrongPassword`.
-- [ ] Portar os testes existentes do pharmacore para `bun:test`.
+- [x] Genéricos: `Email`, `Text`, `Url`, `Money` (centavos inteiros + moeda),
+      `DateRange`, `StrongPassword`.
+- [x] BR: `Cpf`, `Cnpj` (numérico **e alfanumérico**).
+- [x] Portar os casos de teste do pharmacore para `bun:test`.
+- Notas de implementação:
+  - Padrão de todos os VOs: `static create(raw, { field? }): Result<Vo, ValidationError>`,
+    construtor privado, entrada não-string (JSON) vira falha em vez de exceção.
+  - `Cnpj` segue a IN RFB nº 2.229/2024 (CNPJ alfanumérico, emitido desde jul/2026):
+    12 caracteres A–Z/0–9 + 2 DVs numéricos, valor de cada caractere = ASCII − 48. Validado
+    com o exemplo oficial `12.ABC.345/01DE-35`. O VO do pharmacore não calculava os DVs.
+  - `StrongPassword` foi para `./vo` (não é brasileiro), devolve uma issue por regra
+    violada e mascara `toString`/`toJSON` para não vazar a senha em logs.
+  - `PositiveNumber` saiu do escopo: `Guard.inRange`/`Guard.integer` cobrem o `Number` VO
+    do pharmacore sem criar um VO genérico demais.
+  - `Money` aceita negativos (estornos); "preço ≥ 0" é regra da entidade. Casas decimais
+    por moeda vêm do `Intl` (BRL 2, JPY 0).
+  - `DateRange` é semiaberto `[start, end)`; `overlaps` substitui o
+    `temConflitoDeHorario` do shift-swap.
+  - O smoke test verifica que um erro criado em `core-kernel/vo` é `instanceof` da
+    `ValidationError` de `core-kernel` (justificativa do build sem bundler).
 
 ### Fase 7 — Kit de testes (`./testing`)
 - [ ] `InMemoryRepository<T>` (baseado em `Map`), `FixedClock`, `SequentialIdGenerator`.
@@ -308,4 +324,4 @@ acopladas a caminhos/API do pharmacore).
 | 1 | Nome no npm | **`core-kernel`** (sem escopo). Reservar cedo publicando `0.0.0`, ou usar `@macndesign/core-kernel` se o npm recusar por similaridade |
 | 2 | Repositório retorna `T \| null` ou `Result<T>` | **`T \| null`**; falha de infra é exceção → `UnexpectedError` no use case |
 | 3 | Idioma da API e dos códigos de erro | **Inglês** (API, nomes e `code`); mensagens são sobrescrevíveis via construtor |
-| 4 | VOs brasileiros no mesmo pacote (`./vo/br`) ou separado | Em aberto — recomendação: subpath `./vo/br` |
+| 4 | VOs brasileiros no mesmo pacote (`./vo/br`) ou separado | **Subpath `./vo/br`** |

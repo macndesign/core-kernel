@@ -10,4 +10,13 @@ assert.equal(result.unwrapOr(0), 0);
 assert.ok(Result.isResult(result));
 assert.ok(isAppError(result.error));
 
+// Subpaths compartilham as mesmas classes (build sem bundler): um erro criado em
+// core-kernel/vo é instância da ValidationError exportada por core-kernel.
+const { Email } = require("core-kernel/vo");
+const { Cnpj } = require("core-kernel/vo/br");
+const { ValidationError: CoreValidationError } = require("core-kernel");
+const invalidEmail = Email.create("x");
+assert.ok(invalidEmail.error instanceof CoreValidationError);
+assert.equal(Cnpj.create("12.ABC.345/01DE-35").unwrap().formatted, "12.ABC.345/01DE-35");
+
 console.log(`CJS ok: ${entrypoints.join(", ")}`);
