@@ -6,7 +6,7 @@ const RESULT_BRAND = Symbol.for("core-kernel/Result");
 
 interface ResultMethods<T, E extends AppError> {
   isOk(): this is Ok<T, E>;
-  isFail(): this is Fail<T, E>;
+  isFail(): this is Fail<E>;
   /** Transforma o valor de sucesso; não executa em falha. */
   map<U>(fn: (value: T) => U): Result<U, E>;
   /** Encadeia uma operação que também retorna `Result`; os tipos de erro se acumulam. */
@@ -24,7 +24,11 @@ export interface Ok<T, E extends AppError = never> extends ResultMethods<T, E> {
   readonly value: T;
 }
 
-export interface Fail<T, E extends AppError> extends ResultMethods<T, E> {
+/**
+ * Falha. Não carrega o tipo de sucesso, então pode ser devolvida como qualquer
+ * `Result<U, E>`: `if (r.isFail()) return r;` propaga a falha mesmo mudando o tipo de sucesso.
+ */
+export interface Fail<E extends AppError> extends ResultMethods<never, E> {
   readonly ok: false;
   readonly error: E;
 }
@@ -33,7 +37,7 @@ export interface Fail<T, E extends AppError> extends ResultMethods<T, E> {
  * Resultado de uma operação que pode falhar de forma esperada. O valor (`value`) e o
  * erro (`error`) só ficam acessíveis depois do narrowing com `isOk()`/`isFail()` (ou `ok`).
  */
-export type Result<T, E extends AppError = AppError> = Ok<T, E> | Fail<T, E>;
+export type Result<T, E extends AppError = AppError> = Ok<T, E> | Fail<E>;
 
 class OkImpl<T, E extends AppError> implements Ok<T, E> {
   readonly ok = true as const;
@@ -46,7 +50,7 @@ class OkImpl<T, E extends AppError> implements Ok<T, E> {
     return true;
   }
 
-  isFail(): this is Fail<T, E> {
+  isFail(): this is Fail<E> {
     return false;
   }
 
@@ -75,42 +79,42 @@ class OkImpl<T, E extends AppError> implements Ok<T, E> {
   }
 }
 
-class FailImpl<T, E extends AppError> implements Fail<T, E> {
+class FailImpl<E extends AppError> implements Fail<E> {
   readonly ok = false as const;
 
   constructor(readonly error: E) {
     Object.freeze(this);
   }
 
-  isOk(): this is Ok<T, E> {
+  isOk(): this is Ok<never, E> {
     return false;
   }
 
-  isFail(): this is Fail<T, E> {
+  isFail(): this is Fail<E> {
     return true;
   }
 
-  map<U>(_fn: (value: T) => U): Result<U, E> {
-    return this as unknown as Fail<U, E>;
+  map<U>(_fn: (value: never) => U): Result<U, E> {
+    return this;
   }
 
-  flatMap<U, F extends AppError>(_fn: (value: T) => Result<U, F>): Result<U, E | F> {
-    return this as unknown as Fail<U, E>;
+  flatMap<U, F extends AppError>(_fn: (value: never) => Result<U, F>): Result<U, E | F> {
+    return this;
   }
 
-  mapError<F extends AppError>(fn: (error: E) => F): Result<T, F> {
-    return new FailImpl<T, F>(fn(this.error));
+  mapError<F extends AppError>(fn: (error: E) => F): Result<never, F> {
+    return new FailImpl(fn(this.error));
   }
 
-  match<A, B = A>(handlers: { ok: (value: T) => A; fail: (error: E) => B }): A | B {
+  match<A, B = A>(handlers: { ok: (value: never) => A; fail: (error: E) => B }): A | B {
     return handlers.fail(this.error);
   }
 
-  unwrap(): T {
+  unwrap(): never {
     throw this.error;
   }
 
-  unwrapOr<U>(fallback: U): T | U {
+  unwrapOr<U>(fallback: U): U {
     return fallback;
   }
 }
@@ -126,7 +130,7 @@ function ok<T>(value?: T): Result<T | undefined, never> {
 }
 
 function fail<E extends AppError>(error: E): Result<never, E> {
-  return new FailImpl<never, E>(error);
+  return new FailImpl(error);
 }
 
 type AnyResult = Result<unknown, AppError>;

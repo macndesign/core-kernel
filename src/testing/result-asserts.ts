@@ -24,7 +24,7 @@ export function assertOk<T, E extends AppError>(result: Result<T, E>): asserts r
 export function assertFail<T, E extends AppError>(
   result: Result<T, E>,
   code?: string,
-): asserts result is Fail<T, E> {
+): asserts result is Fail<E> {
   if (result.isOk()) throw new Error(`Expected Fail, got Ok: ${describe(result.value)}`);
   if (code === undefined) return;
   const { issues = [] } = result.error as { issues?: ValidationError["issues"] };

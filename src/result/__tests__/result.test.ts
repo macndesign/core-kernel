@@ -53,6 +53,43 @@ describe("Result.ok / Result.fail", () => {
   });
 });
 
+describe("propagação de falha com retorno antecipado", () => {
+  const parse = (raw: string): Result<number, ValidationError> =>
+    Number.isNaN(Number(raw)) ? Result.fail(invalid("raw")) : Result.ok(Number(raw));
+
+  it("isFail() permite devolver a falha com outro tipo de sucesso", () => {
+    const double = (raw: string): Result<string, ValidationError | NotFoundError> => {
+      const parsed = parse(raw);
+      if (parsed.isFail()) return parsed; // Fail<ValidationError> serve como Result<string, ...>
+      return Result.ok(String(parsed.value * 2));
+    };
+
+    expect(double("21").unwrap()).toBe("42");
+    expect(double("x").isFail()).toBe(true);
+  });
+
+  it("o discriminante ok também propaga", () => {
+    const toVoid = (raw: string): Result<void, ValidationError> => {
+      const parsed = parse(raw);
+      if (!parsed.ok) return parsed;
+      return Result.ok();
+    };
+
+    expect(toVoid("x").isFail()).toBe(true);
+  });
+
+  it("não permite propagar um erro fora da união declarada", () => {
+    const strict = (): Result<void, ValidationError> => {
+      const missing: Result<number, NotFoundError> = Result.fail(new NotFoundError("x"));
+      // @ts-expect-error NotFoundError não faz parte de ValidationError
+      if (missing.isFail()) return missing;
+      return Result.ok();
+    };
+
+    expect(strict().isFail()).toBe(true);
+  });
+});
+
 describe("map / flatMap / mapError", () => {
   it("map transforma o valor de um ok", () => {
     expect(
