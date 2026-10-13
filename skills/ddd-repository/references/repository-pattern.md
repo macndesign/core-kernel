@@ -216,7 +216,8 @@ describe("InMemoryBookingRepository", () => {
 - [ ] Port no core, composta das interfaces do core-kernel, só com métodos usados.
 - [ ] `findById` → `T | null`; escrita → `void`; infraestrutura lança.
 - [ ] Ids tipados nas assinaturas.
-- [ ] Métodos extras devolvem agregados e têm nome do domínio.
+- [ ] Métodos extras têm nome do domínio e devolvem agregados — ou `count`/`exists` usados por
+      um comando para decidir uma regra.
 - [ ] Mapper com `restore`; tipos do ORM não saem do adapter.
 - [ ] Transação para gravações em várias tabelas do mesmo agregado.
 - [ ] Dublê estende `InMemoryRepository`; mapper testado ida e volta.

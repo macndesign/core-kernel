@@ -11,7 +11,8 @@ Rules an assistant must follow when writing code with core-kernel:
 - State changes only through domain methods that return `Result<void, ...>`. No setters, no public `props`.
 - Repositories return `T | null` and throw on infrastructure failure. Use cases turn `null` into `NotFoundError`. Extend `BaseUseCase` so thrown errors become `UnexpectedError`.
 - Repositories hold writes + `findById` only. Screen/list reads go through query ports that return DTOs.
-- Inject `Clock` instead of calling `new Date()` in use cases. Pass `now` into domain methods.
+- Inject `Clock` instead of calling `new Date()` (current time) in use cases/domain. Pass `now` into domain methods; deriving dates from it (`new Date(now.getTime() + ms)`) is fine.
+- Rules that need data outside the aggregate (limits, uniqueness): the use case loads the minimum (`count`/`exists` repository method) and a pure domain function decides.
 - Depend on the narrowest port: `FindByIdRepository<Order> & UpdateRepository<Order>`, not a full CRUD interface.
 - Use typed ids: `class OrderId extends UniqueId { declare private readonly __brand: "OrderId" }`.
 - Check the ready-made value objects (`core-kernel/vo`, `core-kernel/vo/br`) before writing a new one.
@@ -51,6 +52,12 @@ error.code  // stable machine-readable code; error.toJSON() for responses/logs
 All return `Result<void, ValidationError>` and accept `{ field?, code?, message? }`:
 `required`, `notEmpty`, `minLength`, `maxLength`, `inRange(value, { min?, max? })`, `integer`, `matches(value, regex)`, `oneOf(value, list)`.
 `Guard.all([...])` accumulates every issue; `a.flatMap(() => b)` stops at the first failure.
+
+Default issue codes: required `REQUIRED`, notEmpty `EMPTY`, minLength/maxLength `TOO_SHORT`/`TOO_LONG`, inRange `TOO_SMALL`/`TOO_LARGE`/`NOT_A_NUMBER`, integer `NOT_AN_INTEGER`, matches `INVALID_FORMAT`, oneOf `NOT_ALLOWED`. A `ValidationError` itself has code `VALIDATION_FAILED`; error defaults: `NOT_FOUND`, `CONFLICT`, `FORBIDDEN`, `UNEXPECTED` (override with specific codes).
+
+## Ids
+
+`XxxId.generate()` (UUID v4 by default; `UniqueId.useGenerator(g)` swaps it and returns a restore fn) and `XxxId.from(raw): Result<XxxId, ValidationError>` (any non-empty string, trimmed; empty → issue `INVALID_ID`, field `id`). Both return the subclass type.
 
 ## Value object template
 
@@ -228,7 +235,7 @@ describe("ConfirmOrderUseCase", () => {
 });
 ```
 
-Other test helpers: `new SequentialIdGenerator("order").install()` makes ids predictable (event ids share the sequence; returns a restore function); `assertFail(result, code)` matches `error.code` or any validation issue code; extend `InMemoryRepository` and use `this.find` / `this.filter` for custom queries.
+Other test helpers: `new SequentialIdGenerator("order").install()` makes ids predictable (event ids share the sequence; returns a restore function); `assertFail(result, code)` matches `error.code` or any validation issue code; `InMemoryRepository`: `new InMemoryRepository([...initial])`, `items`, `size`, `seed()`, `clear()`; `create` of a duplicate and `update` of a missing entity throw; extend it and use `this.find` / `this.filter` for custom queries (they honour `failNext`; if you read `this.store` directly, call `this.throwPendingFailure()` first).
 
 ## Skills
 

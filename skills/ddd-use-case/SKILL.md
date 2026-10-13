@@ -23,7 +23,12 @@ eventos. Não contém regra de negócio nem detalhe de infraestrutura.
 - Converter ids e campos com as fábricas (`OrderId.from`, `Email.create`) e propagar falhas com
   `if (r.isFail()) return r;`.
 - `findById` devolve `null` → o use case decide o `NotFoundError` com `code` específico.
-- Regra de negócio fica na entidade/VO/serviço de domínio; o use case só chama.
+- Regra de negócio fica na entidade/VO/serviço de domínio; o use case só chama. Regra que
+  depende de dados fora do agregado (limite de itens, e-mail único): o use case busca o dado
+  mínimo (`count`/`exists`) e passa para uma função de domínio (skill `ddd-domain-service`).
+- Port com método próprio: `Pick<LoanRepository, "create" | "countActiveByMember">`; ports
+  genéricas: interseção `FindByIdRepository<T> & UpdateRepository<T>`. As duas formas são
+  equivalentes — o objetivo é depender só do que usa.
 - Hora atual vem do `Clock` injetado e é passada ao domínio.
 - Ordem: carregar → regra de domínio → persistir → `publish(pullDomainEvents())` → devolver DTO.
 - Leitura para tela usa uma port de query (skill `ddd-query-cqrs`), não o repositório.

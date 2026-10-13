@@ -83,7 +83,7 @@
     "check:package": "publint --strict && attw --pack . --profile node16 && node scripts/smoke.mjs && node scripts/smoke.cjs && node scripts/smoke-cli.mjs",
     "verify": "bun run lint && bun run typecheck && bun run test:coverage && bun run build && bun run check:package && bun run check:examples && bun run check:skills",
     "prepublishOnly": "bun run verify",
-    "prepare": "simple-git-hooks",
+    "prepare": "node scripts/prepare.mjs",
     "check:examples": "tsc -p examples/tsconfig.json && bun test ./examples",
     "check:ts-compat": "bunx -p typescript@5.4.5 tsc -p examples/tsconfig.json",
     "check:skills": "bun scripts/check-skills.ts"

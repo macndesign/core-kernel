@@ -15,6 +15,24 @@
 
 Todos: `Xxx.create(raw, { field? }): Result<Xxx, ValidationError>`.
 
+## Códigos padrão (Guard, ids e VOs)
+
+| Origem | Código padrão |
+|---|---|
+| `Guard.required` | `REQUIRED` |
+| `Guard.notEmpty` | `EMPTY` |
+| `Guard.minLength` / `maxLength` | `TOO_SHORT` / `TOO_LONG` |
+| `Guard.inRange` | `TOO_SMALL` / `TOO_LARGE` / `NOT_A_NUMBER` |
+| `Guard.integer` | `NOT_AN_INTEGER` |
+| `Guard.matches` | `INVALID_FORMAT` |
+| `Guard.oneOf` | `NOT_ALLOWED` |
+| `UniqueId.from` (string vazia) | `INVALID_ID` (field `id`) |
+| `ValidationError` (código do erro em si) | `VALIDATION_FAILED`; os códigos acima ficam em `issues[].code` |
+| VOs prontos | `INVALID_EMAIL`, `INVALID_URL`, `INVALID_CPF`, `INVALID_CNPJ`, `INVALID_CURRENCY`, `CURRENCY_MISMATCH`, `INVALID_DATE`, `INVALID_DATE_RANGE`, `MISSING_UPPERCASE`/`LOWERCASE`/`DIGIT`/`SYMBOL` |
+| `NotFoundError` / `ConflictError` / `ForbiddenError` / `UnexpectedError` | `NOT_FOUND` / `CONFLICT` / `FORBIDDEN` / `UNEXPECTED` (sobrescreva com um código específico) |
+
+`assertFail(result, code)` aceita tanto o código do erro quanto o de qualquer issue.
+
 ## Template: VO de valor primitivo
 
 ```ts

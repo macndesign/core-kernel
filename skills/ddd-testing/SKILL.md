@@ -15,8 +15,10 @@ narrowing do `Result` e funcionam com qualquer test runner.
 
 - Ler `references/testing-pattern.md` antes de escrever os testes.
 - Dublês:
-  - `InMemoryRepository<T>` (estenda para queries próprias com `this.find`/`this.filter`;
-    `failNext(error)` simula queda do banco);
+  - `InMemoryRepository<T>` (`new InMemoryRepository([...entidades])`, `items`, `size`,
+    `seed(...)`, `clear()`; estenda para queries próprias com `this.find`/`this.filter`;
+    `failNext(error)` faz a **próxima** operação lançar — inclusive queries próprias que usam
+    `find`/`filter`; se a query ler `this.store` direto, chame `this.throwPendingFailure()` antes);
   - `FixedClock` (`set`, `advance`);
   - `SequentialIdGenerator` (`install()` devolve a função de restauração; ids de eventos também
     consomem a sequência);

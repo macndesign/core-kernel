@@ -25,7 +25,8 @@ domínio que devolvem `Result`.
 - Atributos com regras próprias viram VOs dentro das props (`Email`, `Money`, `DateRange`).
 - Referenciar outras entidades/agregados **pelo id**, não pela instância.
 - Datas de negócio vêm por parâmetro (`now: Date`) a partir do `Clock` do use case; não chamar
-  `new Date()` dentro de métodos de domínio.
+  `new Date()` sem argumentos (hora atual) no domínio. Derivar datas de `now` é normal
+  (`new Date(now.getTime() + 14 * DAY_MS)`). Getters de `Date` devolvem cópia.
 - Extrair validação compartilhada entre `create` e um método de atualização para uma função
   privada estática, em vez de duplicar regras.
 

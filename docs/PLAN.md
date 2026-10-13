@@ -329,6 +329,14 @@ acopladas a caminhos/API do pharmacore).
 - [x] Smoke do CLI publicado (`scripts/smoke-cli.mjs`) em `check:package` e na matriz Node 20/22/24.
 - **DoD:** num projeto vazio, `bun add core-kernel && bunx core-kernel skills add` permite
   ao Claude e ao Codex gerar uma entidade e um use case que compilam e passam nos testes.
+  ✅ Validado (2026-10-13) com o Claude: projeto novo fora do repo, lib instalada do tarball,
+  agente sem contexto implementou um domínio inédito (empréstimo de livros: agregado, port,
+  2 use cases, política de limite, 17 testes) consultando só as skills/`llms.txt`; `tsc` e
+  testes passaram na primeira tentativa. Os atritos relatados viraram correções nas skills
+  (API do `InMemoryRepository`, `count`/`exists` em repositório para regras de comando,
+  padrão de limite/cota, códigos padrão do `Guard`/`UniqueId`, derivar datas de `now`).
+  Não validado com o Codex. A validação também achou o `prepare` quebrando `bun pm pack`
+  (corrigido com `scripts/prepare.mjs`).
 
 ### Fase 9 — Release
 - [ ] Changesets para SemVer; permanecer em 0.x até a API estabilizar.

@@ -98,11 +98,11 @@ export class Order extends AggregateRoot<OrderProps, OrderId, OrderEvent> {
   }
 
   get createdAt(): Date {
-    return this.props.createdAt;
+    return new Date(this.props.createdAt.getTime());
   }
 
   get updatedAt(): Date {
-    return this.props.updatedAt;
+    return new Date(this.props.updatedAt.getTime());
   }
 
   /** Transição de estado: devolve `Result`, nunca lança e nunca expõe setter. */

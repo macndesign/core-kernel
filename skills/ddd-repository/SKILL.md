@@ -23,7 +23,9 @@ formato do banco com um `Mapper`, usando `restore` para reidratar.
 - Repositório é para escrita + leitura do agregado. Listagens e telas → port de query com DTOs
   (skill `ddd-query-cqrs`).
 - Métodos extras só quando um use case real precisa, com nome do domínio
-  (`findActiveByEmployee`), sempre devolvendo agregados.
+  (`findActiveByEmployee`). Devolvem agregados — ou um primitivo (`countActiveByMember`,
+  `existsByEmail`) quando um **comando** precisa dele para decidir uma regra (limite,
+  unicidade). Dados para mostrar em tela vão para uma query.
 - Adapter: `Mapper<Agregado, Linha>` com `toDomain` (usa `restore`) e `fromDomain`; tipos do
   ORM nunca atravessam a port.
 - Operação que grava várias tabelas do mesmo agregado = uma transação no adapter.

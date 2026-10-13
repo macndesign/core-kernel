@@ -106,6 +106,18 @@ export class WithdrawUseCase extends BaseUseCase<Input, { balance: number }, Wit
 }
 ```
 
+## API do InMemoryRepository
+
+| Membro | Uso |
+|---|---|
+| `new InMemoryRepository<T>(iniciais?)` | dados iniciais (sem as checagens do `create`) |
+| `create` / `update` / `delete` / `findById` | contrato `CrudRepository`; `create` duplicado e `update` inexistente **lançam** (como um banco) |
+| `items` / `size` | snapshot para asserções |
+| `seed(...entidades)` / `clear()` | preparar/limpar dados no meio do teste |
+| `failNext(error)` | a **próxima** operação lança `error` (simula queda do banco) |
+| `protected find(pred)` / `filter(pred)` | base para queries próprias; respeitam `failNext` |
+| `protected store` (`Map<id, T>`) + `throwPendingFailure()` | acesso direto; chame `throwPendingFailure()` para respeitar `failNext` |
+
 ## Repositório em memória com query própria
 
 ```ts
@@ -115,7 +127,13 @@ import type { Account } from "./account.js";
 
 export class InMemoryAccountRepository extends InMemoryRepository<Account> {
   async findByOwner(ownerId: string): Promise<Account[]> {
-    return this.filter((account) => account.ownerId === ownerId);
+    return this.filter((account) => account.ownerId === ownerId); // respeita failNext
+  }
+
+  /** Lendo o store direto: chame throwPendingFailure() para respeitar failNext. */
+  async countByOwner(ownerId: string): Promise<number> {
+    this.throwPendingFailure();
+    return [...this.store.values()].filter((account) => account.ownerId === ownerId).length;
   }
 }
 ```
@@ -187,10 +205,13 @@ describe("WithdrawUseCase", () => {
     expect(events.published).toEqual([]);
   });
 
-  it("repositório com query própria", async () => {
+  it("repositório com query própria (e failNext também vale para ela)", async () => {
     const { accounts } = createSut();
 
     expect(await accounts.findByOwner("owner-1")).toHaveLength(1);
+    accounts.failNext(new Error("db down"));
+    await expect(accounts.countByOwner("owner-1")).rejects.toThrow("db down");
+    expect(await accounts.countByOwner("owner-1")).toBe(1);
   });
 });
 ```

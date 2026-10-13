@@ -31,6 +31,34 @@ export function ensureNoShiftConflict(
 }
 ```
 
+## Regra que depende de dados persistidos (limite, cota, unicidade)
+
+O agregado não conhece os outros registros do banco. O use case busca o dado mínimo
+(`count`/`exists` no repositório) e uma função de domínio decide:
+
+```ts
+// file: loan-limit.policy.ts
+import { ConflictError, Result } from "core-kernel";
+
+export const MAX_ACTIVE_LOANS = 3;
+
+export function ensureCanBorrow(activeLoans: number): Result<void, ConflictError> {
+  if (activeLoans < MAX_ACTIVE_LOANS) return Result.ok();
+  return Result.fail(
+    new ConflictError("Loan limit reached", { code: "LOAN_LIMIT_REACHED", details: { max: MAX_ACTIVE_LOANS } }),
+  );
+}
+```
+
+```ts nocheck
+// no use case:
+const allowed = ensureCanBorrow(await this.loans.countActiveByMember(memberId));
+if (allowed.isFail()) return allowed;
+```
+
+> Unicidade sob concorrência (dois cadastros simultâneos com o mesmo e-mail) também precisa de
+> uma constraint no banco; a checagem no use case dá a mensagem amigável.
+
 ## Calculadora
 
 ```ts
