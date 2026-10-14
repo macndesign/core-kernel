@@ -354,7 +354,21 @@ acopladas a caminhos/API do pharmacore).
       incompatíveis que a migração revelar saem como `0.2.0`.
 
 ### Fase 10 — Migração piloto
-- [ ] shift-swap: substituir `src/shared/*` e ajustar use cases ao `Result` tipado.
+- [x] shift-swap: substituir `src/shared/*` e ajustar use cases ao `Result` tipado (branch
+      `feat/migrar-core-kernel` do shift-swap, commit `094d6a5`; PR para `master` e release
+      `0.6.0` pelo fluxo do próprio shift-swap). Migração completa: ids tipados, ports
+      segregadas, `BaseUseCase`, `Clock`, códigos de erro em português (`CODIGOS_ERRO`);
+      158 → 155 testes (3 de "id vazio" ficaram impossíveis). `core-kernel` como
+      `peerDependency` e externo no `bun build` (`--packages external`).
+  - Achados → `0.2.0` (branch `feat/ajustes-migracao-shift-swap`):
+    1. VOs prontos não permitiam trocar código/mensagem → opção `errors` por código padrão.
+    2. `UniqueId.from` tinha `field`/`code` fixos → `from(raw, { field, code, message })`.
+    3. Skills ensinavam `result.map(() => { efeito })`, que reprova no lint
+       `useIterableCallbackReturn` do Biome → retorno antecipado nas skills e lint dos blocos
+       no `check:skills`.
+  - Decisões do domínio que divergem das skills, mantidas de propósito: use cases do shift-swap
+    devolvem entidades (a API monta os DTOs); `SolicitacaoTrocaTurno.reconstituir` valida
+    coerência; turnos usam data/hora em texto local (sem `DateRange`, por causa de fuso).
 - [ ] pharmacore: substituir `packages/shared/core`.
 
 ## 6. Decisões

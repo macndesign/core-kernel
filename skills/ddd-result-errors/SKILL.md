@@ -23,6 +23,8 @@ uso indevido da API e falhas de infraestrutura (que o `BaseUseCase` converte em
 - Propagar com retorno antecipado: `if (r.isFail()) return r;` — funciona mesmo quando o tipo
   de sucesso muda. Nunca reconstruir o erro (`Result.fail(r.error)`) sem motivo.
 - Ler `.value`/`.error` só depois do narrowing (`isOk()`, `isFail()` ou `ok`).
+- `map`/`flatMap` são para **transformar valores**. Efeito colateral (alterar estado, gravar)
+  vai depois de um retorno antecipado, não dentro de um callback de `map`.
 - Validar vários campos com `Result.combine([...])` ou `Guard.all([...])` para devolver todas
   as issues de uma vez.
 - Envolver código de terceiros que lança com `Result.try`/`Result.tryAsync`.

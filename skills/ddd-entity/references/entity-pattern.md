@@ -96,10 +96,13 @@ export class Employee extends Entity<EmployeeProps, EmployeeId> {
     if (!this.isActive) {
       return Result.fail(new ConflictError("Employee is inactive", { code: "EMPLOYEE_INACTIVE" }));
     }
-    return Employee.validateHours(hours).map(() => {
-      this.props.weeklyHours = hours;
-      this.props.updatedAt = now;
-    });
+    // Efeito colateral: retorno antecipado, não `.map(() => { ... })`.
+    const valid = Employee.validateHours(hours);
+    if (valid.isFail()) return valid;
+
+    this.props.weeklyHours = hours;
+    this.props.updatedAt = now;
+    return Result.ok();
   }
 
   deactivate(now: Date): Result<void, ConflictError> {
@@ -233,4 +236,7 @@ describe("Employee", () => {
 - Usar `restore` fora de mappers/repositórios para "pular validação".
 - Expor `props` ou um `toJSON` com tudo: a conversão para DTO deve ser explícita.
 - Método genérico `update(props)` em vez de transições com nome do negócio.
+- Mudar estado dentro de `result.map(() => { ... })`: `map` é para transformar valor. Para
+  efeitos, use retorno antecipado (`if (r.isFail()) return r;` → altera → `return Result.ok()`).
+  Além de mais claro, o lint `useIterableCallbackReturn` do Biome reprova o `map` sem retorno.
 - Guardar a entidade relacionada inteira (`order.customer`) em vez do id (`order.customerId`).

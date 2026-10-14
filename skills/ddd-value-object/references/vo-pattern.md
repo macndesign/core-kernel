@@ -13,7 +13,39 @@
 | `core-kernel/vo/br` | `Cpf` | só dígitos, `formatted` |
 | | `Cnpj` | numérico e alfanumérico (IN RFB 2.229/2024), `formatted`, `root` |
 
-Todos: `Xxx.create(raw, { field? }): Result<Xxx, ValidationError>`.
+Todos: `Xxx.create(raw, { field?, errors? }): Result<Xxx, ValidationError>`.
+
+`errors` troca o código e/ou a mensagem de cada issue, indexado pelo **código padrão** (o tipo
+`XxxErrorCode` de cada VO lista as chaves válidas). Útil para códigos e mensagens no idioma do
+projeto, sem reescrever o VO:
+
+```ts
+// file: email-pt.ts
+import { Email } from "core-kernel/vo";
+
+export const emailPt = (raw: string) =>
+  Email.create(raw, {
+    field: "email",
+    errors: {
+      INVALID_EMAIL: { code: "EMAIL_INVALIDO", message: "E-mail inválido" },
+      TOO_LONG: { code: "EMAIL_LONGO" }, // só o código; a mensagem padrão fica
+    },
+  });
+```
+
+```ts
+// file: email-pt.test.ts
+import { expect, it } from "bun:test";
+import { assertFail } from "core-kernel/testing";
+import { emailPt } from "./email-pt.js";
+
+it("usa código e mensagem do projeto", () => {
+  const result = emailPt("x");
+
+  assertFail(result, "EMAIL_INVALIDO");
+  expect(result.error.message).toBe("E-mail inválido");
+});
+```
 
 ## Códigos padrão (Guard, ids e VOs)
 
@@ -26,7 +58,7 @@ Todos: `Xxx.create(raw, { field? }): Result<Xxx, ValidationError>`.
 | `Guard.integer` | `NOT_AN_INTEGER` |
 | `Guard.matches` | `INVALID_FORMAT` |
 | `Guard.oneOf` | `NOT_ALLOWED` |
-| `UniqueId.from` (string vazia) | `INVALID_ID` (field `id`) |
+| `UniqueId.from` (string vazia) | `INVALID_ID` (field `id`; personalizável: `XxxId.from(raw, { field, code, message })`) |
 | `ValidationError` (código do erro em si) | `VALIDATION_FAILED`; os códigos acima ficam em `issues[].code` |
 | VOs prontos | `INVALID_EMAIL`, `INVALID_URL`, `INVALID_CPF`, `INVALID_CNPJ`, `INVALID_CURRENCY`, `CURRENCY_MISMATCH`, `INVALID_DATE`, `INVALID_DATE_RANGE`, `MISSING_UPPERCASE`/`LOWERCASE`/`DIGIT`/`SYMBOL` |
 | `NotFoundError` / `ConflictError` / `ForbiddenError` / `UnexpectedError` | `NOT_FOUND` / `CONFLICT` / `FORBIDDEN` / `UNEXPECTED` (sobrescreva com um código específico) |

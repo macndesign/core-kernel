@@ -1,7 +1,7 @@
 // Valida as skills publicadas (skills/) e o llms.txt:
 // 1. Frontmatter de cada SKILL.md (name = pasta, description) e agents/openai.yaml.
-// 2. Todo bloco ```ts das references e do llms.txt compila contra o pacote buildado,
-//    e os blocos de teste (`// file: x.test.ts`) passam.
+// 2. Todo bloco ```ts das references e do llms.txt compila contra o pacote buildado, passa no
+//    lint do Biome, e os blocos de teste (`// file: x.test.ts`) passam.
 //
 // Convenções dos blocos:
 // - ```ts nocheck   → ignorado (pseudocódigo, assinaturas).
@@ -91,6 +91,14 @@ writeFileSync(
 const result = await $`tsc -p ${join(OUT_DIR, "tsconfig.json")}`.nothrow();
 if (result.exitCode !== 0) {
   console.error(`Blocos de código das skills/llms.txt não compilam (veja ${OUT_DIR}/).`);
+  process.exit(1);
+}
+// Lint nos blocos: exemplos que o Biome reprovaria seriam copiados para os projetos que usam as
+// skills (ex.: `result.map(() => { efeito })` cai em useIterableCallbackReturn). A pasta é
+// ignorada pelo .gitignore, por isso o --vcs-use-ignore-file=false.
+const lint = await $`biome lint --vcs-use-ignore-file=false ${OUT_DIR}`.nothrow();
+if (lint.exitCode !== 0) {
+  console.error("Blocos de código das skills/llms.txt reprovam no lint do Biome.");
   process.exit(1);
 }
 // Blocos de teste (*.test.ts) também rodam: o exemplo precisa compilar E se comportar como diz.

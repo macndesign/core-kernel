@@ -39,9 +39,9 @@ Todos aceitam `{ code?, details?, cause? }` e têm `toJSON()`.
 | `Guard.integer` | `NOT_AN_INTEGER` |
 | `Guard.matches` | `INVALID_FORMAT` |
 | `Guard.oneOf` | `NOT_ALLOWED` |
-| `UniqueId.from` (string vazia) | `INVALID_ID` (field `id`) |
+| `UniqueId.from` (string vazia) | `INVALID_ID` (field `id`; personalizável: `XxxId.from(raw, { field, code, message })`) |
 | `ValidationError` (código do erro em si) | `VALIDATION_FAILED`; os códigos acima ficam em `issues[].code` |
-| VOs prontos | `INVALID_EMAIL`, `INVALID_URL`, `INVALID_CPF`, `INVALID_CNPJ`, `INVALID_CURRENCY`, `CURRENCY_MISMATCH`, `INVALID_DATE`, `INVALID_DATE_RANGE`, `MISSING_UPPERCASE`/`LOWERCASE`/`DIGIT`/`SYMBOL` |
+| VOs prontos (trocáveis por `errors` no `create`) | `INVALID_EMAIL`, `INVALID_URL`, `INVALID_CPF`, `INVALID_CNPJ`, `INVALID_CURRENCY`, `CURRENCY_MISMATCH`, `INVALID_DATE`, `INVALID_DATE_RANGE`, `MISSING_UPPERCASE`/`LOWERCASE`/`DIGIT`/`SYMBOL` |
 | `NotFoundError` / `ConflictError` / `ForbiddenError` / `UnexpectedError` | `NOT_FOUND` / `CONFLICT` / `FORBIDDEN` / `UNEXPECTED` (sobrescreva com um código específico) |
 
 `assertFail(result, code)` aceita tanto o código do erro quanto o de qualquer issue.

@@ -1,2 +1,2 @@
-export { Cnpj } from "./cnpj.vo.js";
-export { Cpf } from "./cpf.vo.js";
+export { Cnpj, type CnpjErrorCode } from "./cnpj.vo.js";
+export { Cpf, type CpfErrorCode } from "./cpf.vo.js";

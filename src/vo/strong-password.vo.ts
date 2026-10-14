@@ -2,9 +2,17 @@ import { ValueObject } from "../domain/value-object.js";
 import type { ValidationError } from "../errors/validation-error.js";
 import { Guard } from "../guard/guard.js";
 import type { Result } from "../result/result.js";
-import { asString, type VoOptions } from "./internal.js";
+import { asString, type VoOptions, withOverrides } from "./internal.js";
 
-export interface PasswordPolicy extends VoOptions {
+/** Códigos que `StrongPassword.create` pode gerar (chaves de `errors`). */
+export type StrongPasswordErrorCode =
+  | "TOO_SHORT"
+  | "MISSING_UPPERCASE"
+  | "MISSING_LOWERCASE"
+  | "MISSING_DIGIT"
+  | "MISSING_SYMBOL";
+
+export interface PasswordPolicy extends VoOptions<StrongPasswordErrorCode> {
   /** Padrão: 8. */
   minLength?: number;
   /** Cada regra é exigida por padrão. */
@@ -35,6 +43,7 @@ export class StrongPassword extends ValueObject<string> {
       lowercase = true,
       digit = true,
       symbol = true,
+      errors,
     }: PasswordPolicy = {},
   ): Result<StrongPassword, ValidationError> {
     const value = asString(raw);
@@ -43,13 +52,14 @@ export class StrongPassword extends ValueObject<string> {
         ? [Guard.matches(value, pattern, { field, code, message: `${field} must contain ${what}` })]
         : [];
 
-    return Guard.all([
+    const result = Guard.all([
       Guard.minLength(value, minLength, { field }),
       ...rule(uppercase, /[A-Z]/, "MISSING_UPPERCASE", "an uppercase letter"),
       ...rule(lowercase, /[a-z]/, "MISSING_LOWERCASE", "a lowercase letter"),
       ...rule(digit, /\d/, "MISSING_DIGIT", "a digit"),
       ...rule(symbol, /[^A-Za-z0-9]/, "MISSING_SYMBOL", "a symbol"),
     ]).map(() => new StrongPassword(value));
+    return withOverrides(result, errors);
   }
 
   override toString(): string {

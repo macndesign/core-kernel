@@ -1,6 +1,10 @@
 import { ValueObject } from "../domain/value-object.js";
 import { ValidationError, type ValidationIssue } from "../errors/validation-error.js";
 import { Result } from "../result/result.js";
+import { type VoOptions, withOverrides } from "./internal.js";
+
+/** Códigos que `DateRange.create` pode gerar (chaves de `errors`). */
+export type DateRangeErrorCode = "INVALID_DATE" | "INVALID_DATE_RANGE";
 
 export interface DateRangeValue {
   start: Date;
@@ -23,16 +27,28 @@ export class DateRange extends ValueObject<DateRangeValue> {
     super(value);
   }
 
-  static create(input: DateRangeInput): Result<DateRange, ValidationError> {
+  /** `field` prefixa as issues (ex.: `periodo` → `periodo.start`, `periodo.end`). */
+  static create(
+    input: DateRangeInput,
+    { field, errors }: VoOptions<DateRangeErrorCode> = {},
+  ): Result<DateRange, ValidationError> {
+    const name = (part: string) => (field ? `${field}.${part}` : part);
     const start = toDate(input.start);
     const end = toDate(input.end);
     const issues: ValidationIssue[] = [];
-    if (!start) issues.push({ field: "start", code: "INVALID_DATE", message: "start is invalid" });
-    if (!end) issues.push({ field: "end", code: "INVALID_DATE", message: "end is invalid" });
+    if (!start)
+      issues.push({ field: name("start"), code: "INVALID_DATE", message: "start is invalid" });
+    if (!end) issues.push({ field: name("end"), code: "INVALID_DATE", message: "end is invalid" });
     if (start && end && start.getTime() >= end.getTime()) {
-      issues.push({ field: "end", code: "INVALID_DATE_RANGE", message: "end must be after start" });
+      issues.push({
+        field: name("end"),
+        code: "INVALID_DATE_RANGE",
+        message: "end must be after start",
+      });
     }
-    if (issues.length > 0 || !start || !end) return Result.fail(new ValidationError(issues));
+    if (issues.length > 0 || !start || !end) {
+      return withOverrides(Result.fail(new ValidationError(issues)), errors);
+    }
     return Result.ok(new DateRange({ start, end }));
   }
 

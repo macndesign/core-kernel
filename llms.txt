@@ -15,7 +15,8 @@ Rules an assistant must follow when writing code with core-kernel:
 - Rules that need data outside the aggregate (limits, uniqueness): the use case loads the minimum (`count`/`exists` repository method) and a pure domain function decides.
 - Depend on the narrowest port: `FindByIdRepository<Order> & UpdateRepository<Order>`, not a full CRUD interface.
 - Use typed ids: `class OrderId extends UniqueId { declare private readonly __brand: "OrderId" }`.
-- Check the ready-made value objects (`core-kernel/vo`, `core-kernel/vo/br`) before writing a new one.
+- Check the ready-made value objects (`core-kernel/vo`, `core-kernel/vo/br`) before writing a new one. Their issue codes/messages can be replaced with `{ errors: { DEFAULT_CODE: { code, message } } }` (e.g. for another language).
+- Use `map`/`flatMap` to transform values only. For side effects (changing entity state), return early on failure and then mutate: `const v = check(); if (v.isFail()) return v; this.props.x = ...; return Result.ok();`.
 - Libraries built on core-kernel list it as a `peerDependency`.
 
 ## Imports
@@ -57,7 +58,7 @@ Default issue codes: required `REQUIRED`, notEmpty `EMPTY`, minLength/maxLength 
 
 ## Ids
 
-`XxxId.generate()` (UUID v4 by default; `UniqueId.useGenerator(g)` swaps it and returns a restore fn) and `XxxId.from(raw): Result<XxxId, ValidationError>` (any non-empty string, trimmed; empty → issue `INVALID_ID`, field `id`). Both return the subclass type.
+`XxxId.generate()` (UUID v4 by default; `UniqueId.useGenerator(g)` swaps it and returns a restore fn) and `XxxId.from(raw): Result<XxxId, ValidationError>` (any non-empty string, trimmed; empty → issue `INVALID_ID`, field `id`; override with `XxxId.from(raw, { field, code, message })`). Both return the subclass type.
 
 ## Value object template
 

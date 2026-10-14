@@ -1,7 +1,10 @@
 import { ValueObject } from "../../domain/value-object.js";
 import type { ValidationError } from "../../errors/validation-error.js";
 import { Result } from "../../result/result.js";
-import { asString, invalid, type VoOptions } from "../internal.js";
+import { asString, invalid, type VoOptions, withOverrides } from "../internal.js";
+
+/** Códigos que `Cpf.create` pode gerar (chaves de `errors`). */
+export type CpfErrorCode = "INVALID_CPF";
 
 /** Dígito verificador do módulo 11 usado pela Receita Federal. */
 const checkDigit = (base: string, firstWeight: number): number => {
@@ -23,9 +26,14 @@ export class Cpf extends ValueObject<string> {
     super(value);
   }
 
-  static create(raw: string, { field = "cpf" }: VoOptions = {}): Result<Cpf, ValidationError> {
+  static create(
+    raw: string,
+    { field = "cpf", errors }: VoOptions<CpfErrorCode> = {},
+  ): Result<Cpf, ValidationError> {
     const digits = asString(raw).replace(/\D/g, "");
-    return isValid(digits) ? Result.ok(new Cpf(digits)) : invalid(field, "INVALID_CPF");
+    return isValid(digits)
+      ? Result.ok(new Cpf(digits))
+      : withOverrides(invalid(field, "INVALID_CPF"), errors);
   }
 
   /** `000.000.000-00` */

@@ -1,5 +1,5 @@
 import type { ValidationError } from "../errors/validation-error.js";
-import { Guard } from "../guard/guard.js";
+import { Guard, type GuardOptions } from "../guard/guard.js";
 import type { Result } from "../result/result.js";
 import { ValueObject } from "./value-object.js";
 
@@ -45,12 +45,21 @@ export class UniqueId extends ValueObject<string> {
     return construct(this, generator.generate());
   }
 
-  /** Reidrata um id existente (banco, request, provedor externo). */
-  static from<I extends UniqueId>(this: IdClass<I>, raw: string): Result<I, ValidationError> {
+  /**
+   * Reidrata um id existente (banco, request, provedor externo). Falha com a issue
+   * `{ field: "id", code: "INVALID_ID" }`, personalizável por `options`
+   * (ex.: `{ field: "turnoId", code: "ID_INVALIDO", message: "turnoId inválido" }`).
+   */
+  static from<I extends UniqueId>(
+    this: IdClass<I>,
+    raw: string,
+    { field = "id", code = "INVALID_ID", message }: GuardOptions = {},
+  ): Result<I, ValidationError> {
     const value = raw.trim();
-    return Guard.notEmpty(value, { field: "id", code: "INVALID_ID" }).map(() =>
-      // biome-ignore lint/complexity/noThisInStatic: `this` é a subclasse chamada (OrderId.from() → OrderId).
-      construct(this, value),
+    return Guard.notEmpty(value, { field, code, ...(message !== undefined && { message }) }).map(
+      () =>
+        // biome-ignore lint/complexity/noThisInStatic: `this` é a subclasse chamada (OrderId.from() → OrderId).
+        construct(this, value),
     );
   }
 

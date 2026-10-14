@@ -215,7 +215,9 @@ O pacote também publica um `llms.txt` com o resumo da API e as regras para assi
 | `Cpf` | dígitos verificadores, `formatted` |
 | `Cnpj` | numérico **e alfanumérico** (IN RFB 2.229/2024), `formatted`, `root` |
 
-Todos seguem `Xxx.create(raw, { field? }): Result<Xxx, ValidationError>`.
+Todos seguem `Xxx.create(raw, { field?, errors? }): Result<Xxx, ValidationError>`. Com `errors`
+você troca o código e/ou a mensagem de cada issue (ex.: para português):
+`Email.create(raw, { errors: { INVALID_EMAIL: { code: "EMAIL_INVALIDO", message: "E-mail inválido" } } })`.
 
 ## Desenvolvimento
 

@@ -44,6 +44,26 @@ describe("UniqueId.from", () => {
     ]);
   });
 
+  it("aceita field, code e message personalizados", () => {
+    const result = UniqueId.from(" ", {
+      field: "turnoId",
+      code: "ID_INVALIDO",
+      message: "turnoId inválido",
+    });
+
+    expect(result.isFail() && result.error.issues).toEqual([
+      { field: "turnoId", code: "ID_INVALIDO", message: "turnoId inválido" },
+    ]);
+  });
+
+  it("mensagem padrão usa o field informado", () => {
+    const result = UniqueId.from("", { field: "orderId" });
+
+    expect(result.isFail() && result.error.issues).toEqual([
+      { field: "orderId", code: "INVALID_ID", message: "orderId must not be empty" },
+    ]);
+  });
+
   it("subclasses reidratam instâncias da própria subclasse", () => {
     const id: OrderId = OrderId.from("o-1").unwrap();
 

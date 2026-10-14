@@ -2,7 +2,10 @@ import { ValueObject } from "../domain/value-object.js";
 import { ValidationError } from "../errors/validation-error.js";
 import { Guard } from "../guard/guard.js";
 import { Result } from "../result/result.js";
-import type { VoOptions } from "./internal.js";
+import { type VoOptions, withOverrides } from "./internal.js";
+
+/** Códigos que `Money.create`/`fromDecimal` podem gerar (chaves de `errors`). */
+export type MoneyErrorCode = "NOT_AN_INTEGER" | "INVALID_CURRENCY";
 
 export interface MoneyValue {
   /** Valor em unidades mínimas da moeda (ex.: centavos). Sempre inteiro. */
@@ -30,11 +33,11 @@ export class Money extends ValueObject<MoneyValue> {
   /** `field` prefixa as issues (ex.: `price` → `price.amount`). */
   static create(
     { amount, currency }: MoneyValue,
-    { field }: VoOptions = {},
+    { field, errors }: VoOptions<MoneyErrorCode> = {},
   ): Result<Money, ValidationError> {
     const name = (part: string) => (field ? `${field}.${part}` : part);
     const code = String(currency ?? "").toUpperCase();
-    return Guard.all([
+    const result = Guard.all([
       Guard.integer(amount, { field: name("amount") }),
       Guard.matches(code, CURRENCY_PATTERN, {
         field: name("currency"),
@@ -42,13 +45,14 @@ export class Money extends ValueObject<MoneyValue> {
         message: `${name("currency")} must be an ISO 4217 code`,
       }),
     ]).map(() => new Money({ amount, currency: code }));
+    return withOverrides(result, errors);
   }
 
   /** Converte um valor decimal (ex.: `10.5` BRL) para unidades mínimas, arredondando. */
   static fromDecimal(
     decimal: number,
     currency: string,
-    options?: VoOptions,
+    options?: VoOptions<MoneyErrorCode>,
   ): Result<Money, ValidationError> {
     const code = String(currency ?? "").toUpperCase();
     if (!CURRENCY_PATTERN.test(code)) return Money.create({ amount: 0, currency: code }, options);

@@ -2,7 +2,10 @@ import { ValueObject } from "../domain/value-object.js";
 import type { ValidationError } from "../errors/validation-error.js";
 import { Guard } from "../guard/guard.js";
 import type { Result } from "../result/result.js";
-import { asString, type VoOptions } from "./internal.js";
+import { asString, type VoOptions, withOverrides } from "./internal.js";
+
+/** Códigos que `Email.create` pode gerar (chaves de `errors`). */
+export type EmailErrorCode = "TOO_LONG" | "INVALID_EMAIL";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_LENGTH = 254; // RFC 5321
@@ -13,9 +16,12 @@ export class Email extends ValueObject<string> {
     super(value);
   }
 
-  static create(raw: string, { field = "email" }: VoOptions = {}): Result<Email, ValidationError> {
+  static create(
+    raw: string,
+    { field = "email", errors }: VoOptions<EmailErrorCode> = {},
+  ): Result<Email, ValidationError> {
     const value = asString(raw).trim().toLowerCase();
-    return Guard.maxLength(value, MAX_LENGTH, { field })
+    const result = Guard.maxLength(value, MAX_LENGTH, { field })
       .flatMap(() =>
         Guard.matches(value, EMAIL_PATTERN, {
           field,
@@ -24,6 +30,7 @@ export class Email extends ValueObject<string> {
         }),
       )
       .map(() => new Email(value));
+    return withOverrides(result, errors);
   }
 
   get local(): string {

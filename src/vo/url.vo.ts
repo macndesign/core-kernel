@@ -1,13 +1,16 @@
 import { ValueObject } from "../domain/value-object.js";
 import type { ValidationError } from "../errors/validation-error.js";
 import { Result } from "../result/result.js";
-import { asString, invalid, type VoOptions } from "./internal.js";
+import { asString, invalid, type VoOptions, withOverrides } from "./internal.js";
+
+/** Códigos que `Url.create` pode gerar (chaves de `errors`). */
+export type UrlErrorCode = "INVALID_URL";
 
 // WHATWG URL: global no Node, Bun, Deno e navegadores. Declarado aqui porque o build usa só
 // `lib: ES2022`, para manter a lib agnóstica de runtime.
 declare const URL: new (input: string) => { readonly protocol: string; readonly hostname: string };
 
-export interface UrlOptions extends VoOptions {
+export interface UrlOptions extends VoOptions<UrlErrorCode> {
   /** Protocolos aceitos. Padrão: `["http:", "https:"]` (bloqueia `javascript:`, `data:`...). */
   protocols?: readonly string[];
 }
@@ -28,11 +31,13 @@ export class Url extends ValueObject<string> {
 
   static create(
     raw: string,
-    { field = "url", protocols = ["http:", "https:"] }: UrlOptions = {},
+    { field = "url", protocols = ["http:", "https:"], errors }: UrlOptions = {},
   ): Result<Url, ValidationError> {
     const value = asString(raw).trim();
     const parsed = parse(value);
-    if (!parsed || !protocols.includes(parsed.protocol)) return invalid(field, "INVALID_URL");
+    if (!parsed || !protocols.includes(parsed.protocol)) {
+      return withOverrides(invalid(field, "INVALID_URL"), errors);
+    }
     return Result.ok(new Url(value));
   }
 

@@ -1,7 +1,10 @@
 import { ValueObject } from "../../domain/value-object.js";
 import type { ValidationError } from "../../errors/validation-error.js";
 import { Result } from "../../result/result.js";
-import { asString, invalid, type VoOptions } from "../internal.js";
+import { asString, invalid, type VoOptions, withOverrides } from "../internal.js";
+
+/** Códigos que `Cnpj.create` pode gerar (chaves de `errors`). */
+export type CnpjErrorCode = "INVALID_CNPJ";
 
 // Formato válido para CNPJs numéricos e alfanuméricos (IN RFB nº 2.229/2024, emitidos a
 // partir de julho/2026): 12 caracteres A–Z/0–9 + 2 dígitos verificadores numéricos.
@@ -38,11 +41,16 @@ export class Cnpj extends ValueObject<string> {
     super(value);
   }
 
-  static create(raw: string, { field = "cnpj" }: VoOptions = {}): Result<Cnpj, ValidationError> {
+  static create(
+    raw: string,
+    { field = "cnpj", errors }: VoOptions<CnpjErrorCode> = {},
+  ): Result<Cnpj, ValidationError> {
     const value = asString(raw)
       .toUpperCase()
       .replace(/[.\-/\s]/g, "");
-    return isValid(value) ? Result.ok(new Cnpj(value)) : invalid(field, "INVALID_CNPJ");
+    return isValid(value)
+      ? Result.ok(new Cnpj(value))
+      : withOverrides(invalid(field, "INVALID_CNPJ"), errors);
   }
 
   /** `00.000.000/0000-00` (ou `12.ABC.345/01DE-35`). */

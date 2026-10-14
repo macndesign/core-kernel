@@ -21,7 +21,8 @@ domínio que devolvem `Result`.
   - `restore(props, id)`: reidrata do banco **sem validar** — usada só por mappers/repositórios.
 - `props` são `protected`: expor getters para o que o mundo externo precisa ler.
 - Mudança de estado só por **métodos de domínio com nome do negócio** (`confirm`, `cancel`,
-  `reassign`), que devolvem `Result<void, ...>`. Nunca setters.
+  `reassign`), que devolvem `Result<void, ...>`. Nunca setters. Valide com retorno antecipado e
+  altere depois; não altere estado dentro de `result.map(...)`.
 - Atributos com regras próprias viram VOs dentro das props (`Email`, `Money`, `DateRange`).
 - Referenciar outras entidades/agregados **pelo id**, não pela instância.
 - Datas de negócio vêm por parâmetro (`now: Date`) a partir do `Clock` do use case; não chamar
