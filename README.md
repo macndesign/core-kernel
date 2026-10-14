@@ -202,6 +202,41 @@ Skills: `ddd-result-errors`, `ddd-value-object`, `ddd-entity`, `ddd-aggregate-ev
 
 O pacote também publica um `llms.txt` com o resumo da API e as regras para assistentes.
 
+## Publicando uma lib sobre o core-kernel
+
+Para uma **biblioteca** de domínio (como o [shift-swap](https://github.com/macndesign/shift-swap)),
+não só uma aplicação, quatro cuidados evitam problemas que só aparecem em quem instala:
+
+1. **`peerDependency`, não `dependency`.** A aplicação deve ter uma única cópia do core-kernel;
+   com duas, `instanceof` entre as classes falha. Declare a faixa da menor versão cujos recursos
+   você usa (ex.: `"core-kernel": "^0.2.0"`) e também como `devDependency` para os testes.
+2. **Core-kernel externo no build.** Bundlers empacotam dependências por padrão: com `bun build`,
+   use `--packages external`; com tsup/esbuild, `external: ["core-kernel"]`.
+3. **Tipos que resolvem fora de bundlers.** Compile os `.d.ts` com `module`/`moduleResolution`
+   `NodeNext` e imports relativos com extensão `.js` (`from "./ids.js"`). Com `bundler`, os
+   `.d.ts` saem sem extensão e consumidores Node ESM recebem tipos `unknown` em silêncio. Se o
+   pacote também expõe CommonJS, publique declarações separadas para `require` (ver o `exports`
+   deste pacote ou do shift-swap).
+4. **Valide o pacote, não só o código:** `attw --pack . --profile node16`
+   ([@arethetypeswrong/cli](https://github.com/arethetypeswrong/arethetypeswrong.github.io)) e um
+   teste instalando o tarball (`npm pack`) num projeto vazio. E não use `postinstall` para hooks
+   de git: ele roda na máquina de quem instala (use `prepare`).
+
+```jsonc
+// package.json da sua lib (trecho)
+{
+  "type": "module",
+  "peerDependencies": { "core-kernel": "^0.2.0" },
+  "devDependencies": { "core-kernel": "^0.2.0" },
+  "exports": {
+    ".": {
+      "import": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+      "require": { "types": "./dist/cjs/index.d.ts", "default": "./dist/index.cjs" }
+    }
+  }
+}
+```
+
 ## Value Objects disponíveis
 
 | VO | Destaques |

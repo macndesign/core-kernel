@@ -366,6 +366,14 @@ acopladas a caminhos/API do pharmacore).
     3. Skills ensinavam `result.map(() => { efeito })`, que reprova no lint
        `useIterableCallbackReturn` do Biome → retorno antecipado nas skills e lint dos blocos
        no `check:skills`.
+  - Release: `shift-swap@0.6.0` publicado (peer `core-kernel ^0.2.0`). Validado instalando do
+    npm: uma única cópia do core-kernel (deduped) e o fluxo completo de troca funcionando.
+  - Achados de empacotamento no shift-swap (já existiam antes da migração): até a `0.5.0` o
+    `postinstall` impedia instalar pelo npm (corrigido na 0.6.0 com `prepare`); os `.d.ts`
+    sem extensão (build com `moduleResolution: bundler`) perdiam os tipos para consumidores Node
+    ESM/CJS → correção na branch `fix/tipos-nodenext` (NodeNext + `.js`, tipos CJS, `attw` no
+    CI) para a `0.6.1`. Virou a seção "Publicando uma lib sobre o core-kernel" do README e uma
+    regra no `llms.txt`.
   - Decisões do domínio que divergem das skills, mantidas de propósito: use cases do shift-swap
     devolvem entidades (a API monta os DTOs); `SolicitacaoTrocaTurno.reconstituir` valida
     coerência; turnos usam data/hora em texto local (sem `DateRange`, por causa de fuso).

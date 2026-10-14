@@ -17,7 +17,7 @@ Rules an assistant must follow when writing code with core-kernel:
 - Use typed ids: `class OrderId extends UniqueId { declare private readonly __brand: "OrderId" }`.
 - Check the ready-made value objects (`core-kernel/vo`, `core-kernel/vo/br`) before writing a new one. Their issue codes/messages can be replaced with `{ errors: { DEFAULT_CODE: { code, message } } }` (e.g. for another language).
 - Use `map`/`flatMap` to transform values only. For side effects (changing entity state), return early on failure and then mutate: `const v = check(); if (v.isFail()) return v; this.props.x = ...; return Result.ok();`.
-- Libraries built on core-kernel list it as a `peerDependency`.
+- Libraries built on core-kernel (published packages, not apps): list it as a `peerDependency` (plus `devDependency`), keep it external in the bundle (`bun build --packages external`, or `external: ["core-kernel"]`), build declarations with `module`/`moduleResolution` `NodeNext` and `.js` extensions on relative imports (with `bundler` resolution the published `.d.ts` break for Node consumers), and check the package with `attw --pack . --profile node16`. Never use `postinstall` for git hooks (use `prepare`).
 
 ## Imports
 
