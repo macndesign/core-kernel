@@ -1,6 +1,6 @@
 {
   "name": "core-kernel-check",
-  "version": "0.0.0",
+  "version": "0.1.0-beta.0",
   "description": "Verificador com tipos para projetos que usam o core-kernel: pega os erros que compilam mas quebram (ids em SQL, status por texto de erro, throw/new Date() no domínio...)",
   "keywords": [
     "core-kernel",
@@ -47,6 +47,6 @@
     "typescript": "~5.9.2"
   },
   "peerDependencies": {
-    "core-kernel": "^0.2.0 || ^0.3.0"
+    "core-kernel": "^0.2.0 || ^0.3.0-beta.0"
   }
 }
