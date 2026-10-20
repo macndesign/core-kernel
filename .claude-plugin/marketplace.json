@@ -14,7 +14,7 @@
       "source": {
         "source": "npm",
         "package": "core-kernel",
-        "version": "0.3.0-beta.0"
+        "version": "0.3.0-beta.1"
       },
       "category": "development"
     }

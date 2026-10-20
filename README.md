@@ -197,9 +197,10 @@ claude plugin install core-kernel@core-kernel
 bun add -d core-kernel-check   # liga os guardrails automáticos
 ```
 
-O plugin traz as skills, os agentes e dois hooks: a cada `Edit`/`Write` de um `.ts`, roda o
-`core-kernel-check` instalado no projeto e devolve os achados ao agente, que corrige na hora
-(sem o checker instalado, o hook não faz nada); no início da sessão, informa a versão do
+O plugin traz as skills, os agentes e hooks: a cada `Edit`/`Write` de um `.ts`, e de novo ao
+fim de cada turno nos `.ts` alterados segundo o git (o que pega edições feitas por Bash), roda
+o `core-kernel-check` instalado no projeto e devolve os achados ao agente, que corrige na hora
+(sem o checker instalado, os hooks não fazem nada); no início da sessão, informa a versão do
 core-kernel e o que está desatualizado. A versão do plugin acompanha a do pacote no npm.
 
 Para o time inteiro, versione em `.claude/settings.json` (cada pessoa ainda confirma a

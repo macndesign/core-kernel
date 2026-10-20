@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { existsSync, realpathSync } from "node:fs";
 import { isAbsolute, relative, resolve } from "node:path";
 import { ConfigError, check } from "./program.js";
@@ -37,28 +38,70 @@ const isTypeScript = (file: string) =>
 /** Caminho real (links e nomes curtos 8.3 do Windows resolvidos), para comparar pastas. */
 const real = (path: string) => (existsSync(path) ? realpathSync.native(path) : path);
 
+interface HookEvent {
+  cwd?: string;
+  hook_event_name?: string;
+  /** Stop: o agente já está continuando por causa de um Stop hook. */
+  stop_hook_active?: boolean;
+  tool_input?: { file_path?: string };
+}
+
+/** Arquivos alterados ou novos segundo o git (relativos a `root`); vazio fora de um repositório. */
+function changedFiles(root: string): string[] {
+  const git = (...args: string[]) =>
+    execFileSync("git", args, { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] })
+      .split("\n")
+      .filter(Boolean);
+  try {
+    // Os dois já respondem relativo a `cwd` (o projeto pode ser uma subpasta do repositório).
+    return [
+      ...git("diff", "--name-only", "--relative", "HEAD"),
+      ...git("ls-files", "--others", "--exclude-standard"),
+    ];
+  } catch {
+    return [];
+  }
+}
+
 /**
- * Modo hook: nunca trava o agente por falha do checker. Achados → stderr e código 2 (o Claude
- * Code devolve o stderr ao agente); qualquer outra coisa → 0.
+ * Modo hook do Claude Code. Nunca trava o agente por falha do checker: achados → stderr e
+ * código 2 (o Claude Code devolve o stderr ao agente); qualquer outra coisa → 0.
+ * - PostToolUse (Edit/Write): analisa o arquivo editado.
+ * - Stop/SubagentStop: analisa os `.ts` alterados segundo o git, o que cobre edições feitas por
+ *   outras ferramentas (Bash com sed, heredoc, scripts). O código 2 impede o agente de encerrar
+ *   o turno até corrigir; na segunda vez seguida (`stop_hook_active`), deixa encerrar.
  */
 async function runHook(io: Io): Promise<number> {
   try {
-    const event = JSON.parse(await io.readStdin()) as {
-      cwd?: string;
-      tool_input?: { file_path?: string };
-    };
-    const filePath = event.tool_input?.file_path;
-    if (!filePath) return 0;
+    const event = JSON.parse(await io.readStdin()) as HookEvent;
     const root = real(process.env.CLAUDE_PROJECT_DIR ?? event.cwd ?? io.cwd);
-    const file = real(resolve(root, filePath));
-    const inside = relative(root, file);
-    if (!isTypeScript(file) || inside.startsWith("..") || isAbsolute(inside)) return 0;
+    const stopping = event.hook_event_name === "Stop" || event.hook_event_name === "SubagentStop";
+    if (stopping && event.stop_hook_active) return 0;
 
-    const findings = check({ files: [file], cwd: root });
+    const requested = stopping
+      ? changedFiles(root)
+      : event.tool_input?.file_path
+        ? [event.tool_input.file_path]
+        : [];
+    const files = requested
+      .map((file) => real(resolve(root, file)))
+      .filter((file) => {
+        const inside = relative(root, file);
+        return (
+          isTypeScript(file) && existsSync(file) && !inside.startsWith("..") && !isAbsolute(inside)
+        );
+      });
+    if (files.length === 0) return 0;
+
+    const findings = check({ files, cwd: root });
     if (findings.length === 0) return 0;
+    const where =
+      files.length === 1
+        ? relative(root, files[0] as string).replaceAll("\\", "/")
+        : `${files.length} arquivos`;
     io.err(
       [
-        `core-kernel-check: ${findings.length} problema(s) em ${inside.replaceAll("\\", "/")}. Corrija antes de seguir:`,
+        `core-kernel-check: ${findings.length} problema(s) em ${where}. Corrija antes de ${stopping ? "encerrar" : "seguir"}:`,
         ...findings.map((finding) => format(finding, root)),
       ].join("\n"),
     );
