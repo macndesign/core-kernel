@@ -1,0 +1,52 @@
+name: Evals
+
+# Mede o efeito do plugin (skills, agentes, hooks) com `claude plugin eval`: cada caso de evals/
+# roda com e sem o plugin e o relatório mostra a diferença (Δ). Tem custo de API, por isso só
+# roda à mão. Requer o secret ANTHROPIC_API_KEY. Ver docs/evals.md.
+on:
+  workflow_dispatch:
+    inputs:
+      max_cost_usd:
+        description: Teto de custo da execução (US$)
+        default: "10"
+      runs:
+        description: Execuções por caso e por braço
+        default: "3"
+      case:
+        description: Filtro de casos (glob; vazio = todos)
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  evals:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: bun install --frozen-lockfile
+      - run: npm install -g @anthropic-ai/claude-code
+      - name: claude plugin eval
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CASE: ${{ inputs.case }}
+        run: |
+          claude plugin eval . \
+            ${CASE:+--case "$CASE"} \
+            --runs "${{ inputs.runs }}" \
+            --max-cost-usd "${{ inputs.max_cost_usd }}" \
+            --allow-tools Write Edit \
+            --trust-plugin \
+            --no-publish \
+            --threshold 0 \
+            --output-dir evals/results/ci \
+            --report evals/results/ci/report.html
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: evals
+          path: evals/results/ci
