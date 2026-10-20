@@ -1,6 +1,6 @@
 {
   "name": "core-kernel",
-  "version": "0.3.0-beta.1",
+  "version": "0.3.0",
   "description": "Skills, agentes e guardrails (hook com o core-kernel-check) para projetos DDD com o core-kernel",
   "author": {
     "name": "macndesign",
