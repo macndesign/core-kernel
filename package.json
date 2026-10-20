@@ -1,6 +1,6 @@
 {
   "name": "core-kernel",
-  "version": "0.2.0",
+  "version": "0.3.0-beta.0",
   "description": "Blocos base de DDD/Clean Architecture (Result, Entity, ValueObject, UseCase, ports) para Bun e Node",
   "keywords": [
     "ddd",
@@ -28,9 +28,17 @@
   },
   "files": [
     "dist",
+    ".claude-plugin/plugin.json",
+    "hooks/hooks.json",
+    "hooks/*.mjs",
+    "agents",
     "skills",
     "llms.txt",
     "CHANGELOG.md"
+  ],
+  "workspaces": [
+    ".",
+    "packages/*"
   ],
   "bin": {
     "core-kernel": "./dist/cli/index.js"
@@ -83,21 +91,23 @@
   },
   "scripts": {
     "build": "bun scripts/build.ts",
-    "test": "bun test ./src ./cli",
-    "test:coverage": "bun test --coverage ./src ./cli",
+    "test": "bun test ./src ./cli ./hooks",
+    "test:coverage": "bun test --coverage ./src ./cli ./hooks",
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
-    "check:package": "publint --strict && attw --pack . --profile node16 && node scripts/smoke.mjs && node scripts/smoke.cjs && node scripts/smoke-cli.mjs",
-    "verify": "bun run lint && bun run typecheck && bun run test:coverage && bun run build && bun run check:package && bun run check:examples && bun run check:skills",
+    "check:package": "publint --strict && attw --pack . --profile node16 && node scripts/smoke.mjs && node scripts/smoke.cjs && node scripts/smoke-cli.mjs && node scripts/sync-plugin-version.mjs --check",
+    "verify": "bun run lint && bun run typecheck && bun run test:coverage && bun run build && bun run check:package && bun run check:plugin && bun run check:examples && bun run check:checker && bun run check:skills",
     "prepublishOnly": "bun run verify",
     "prepare": "node scripts/prepare.mjs",
     "check:examples": "tsc -p examples/tsconfig.json && bun test ./examples",
     "check:ts-compat": "bunx -p typescript@5.4.5 tsc -p examples/tsconfig.json",
     "check:skills": "bun scripts/check-skills.ts",
+    "check:checker": "bun run --cwd packages/check verify",
+    "check:plugin": "node scripts/validate-plugin.mjs",
     "changeset": "changeset",
-    "version-packages": "changeset version"
+    "version-packages": "changeset version && node scripts/sync-plugin-version.mjs"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",

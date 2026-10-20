@@ -1,0 +1,4 @@
+interface:
+  display_name: "Migração para o core-kernel"
+  short_description: "Playbook para migrar um projeto (ou atualizar um consumidor) para o core-kernel"
+  default_prompt: "Migre este projeto para o core-kernel seguindo o playbook: inventário, mapeamento, troca, tsc, core-kernel-check e teste de ponta a ponta."

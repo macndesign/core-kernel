@@ -14,5 +14,5 @@
     "noEmit": true,
     "types": ["bun"]
   },
-  "include": ["src", "cli", "scripts"]
+  "include": ["src", "cli", "scripts", "hooks"]
 }

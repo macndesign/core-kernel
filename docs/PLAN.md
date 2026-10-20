@@ -324,7 +324,7 @@ acopladas a caminhos/API do pharmacore).
       do consumidor (intrusivo; as `description` das skills já fazem o roteamento).
 - [x] CI: `check:skills` valida frontmatter, compila todo bloco ```ts das references e do
       `llms.txt` contra o `dist` e **roda os blocos de teste** (exemplo errado reprova o CI).
-- [ ] (Opcional, não feito) `.claude-plugin/marketplace.json` apontando para `skills/`.
+- [x] `.claude-plugin/marketplace.json` (feito na Fase 11, com fonte npm).
 - [x] Regra no `CLAUDE.md`: mudança de API pública atualiza a skill no mesmo PR.
 - [x] Smoke do CLI publicado (`scripts/smoke-cli.mjs`) em `check:package` e na matriz Node 20/22/24.
 - **DoD:** num projeto vazio, `bun add core-kernel && bunx core-kernel skills add` permite
@@ -378,6 +378,27 @@ acopladas a caminhos/API do pharmacore).
     devolvem entidades (a API monta os DTOs); `SolicitacaoTrocaTurno.reconstituir` valida
     coerência; turnos usam data/hora em texto local (sem `DateRange`, por causa de fuso).
 - [ ] pharmacore: substituir `packages/shared/core`.
+
+### Fase 11 — Recursos para agentes além das skills
+Motivação: skills são orientação e o agente pode ignorá-las; os bugs mais caros da migração
+do backend piloto **compilavam** (id tipado no SQL, status pelo texto do erro, `try/catch` em
+volta de `execute()`). Branch `feat/recursos-para-agentes`.
+- [x] `core-kernel-check` (`packages/check`, pacote separado com TypeScript 5.9 próprio):
+      regras CK001–CK008 com tipos, supressão com motivo, `--json`, `--hook`. Fixtures com
+      marcas `// espera:`. Piloto: zero achados em `examples/` e no shift-swap; no backend,
+      1 achado real (CK003, `catch` morto em `src/lib/expirar-solicitacoes.ts`); hook em ~2 s
+      por arquivo.
+- [x] Plugin do Claude Code no pacote (`.claude-plugin/plugin.json`, hooks `PostToolUse` e
+      `SessionStart`) e marketplace no repositório com fonte npm; `check:plugin` valida o
+      tarball com `claude plugin validate --strict`.
+- [x] Agentes `ddd-architect`, `ddd-reviewer`, `core-kernel-migrator` (`agents/*.md`), skill
+      `ddd-migration`, `core-kernel agents add|update|check|list` (Claude e Codex/TOML), motor
+      de instalação comum (`cli/artifacts.ts`). `check:skills` valida agentes e passa o checker
+      nos blocos.
+- [x] Evals (`evals/`, 4 casos) + workflow manual `Evals`. `claude plugin eval` falha no
+      Windows (`ENAMETOOLONG`); rodar no workflow ou em macOS/Linux.
+- [ ] Primeira rodada completa dos evals e baseline em `docs/evals.md`.
+- [ ] Release `core-kernel@0.3.0` + `core-kernel-check@0.1.0` (`changeset publish`).
 
 ## 6. Decisões
 

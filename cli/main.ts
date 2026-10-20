@@ -1,19 +1,18 @@
 import { join } from "node:path";
 import {
-  checkSkills,
-  detectTargets,
-  type InstallReport,
-  installSkills,
-  listSkills,
-  type Problem,
-  readLock,
-  TARGET_DIRS,
-  type Target,
-} from "./skills.js";
+  AGENT_DIRS,
+  checkAgents,
+  detectAgentTargets,
+  installAgents,
+  listAgents,
+} from "./agents.js";
+import type { CheckReport, InstallReport, Problem, Target } from "./artifacts.js";
+import { readLock } from "./artifacts.js";
+import { checkSkills, detectTargets, installSkills, listSkills, TARGET_DIRS } from "./skills.js";
 
 export interface Io {
   cwd: string;
-  /** Raiz do pacote core-kernel instalado (onde ficam `skills/` e `package.json`). */
+  /** Raiz do pacote core-kernel instalado (onde ficam `skills/`, `agents/` e `package.json`). */
   packageRoot: string;
   version: string;
   out: (line: string) => void;
@@ -21,22 +20,32 @@ export interface Io {
 }
 
 const USAGE = `Uso: core-kernel skills <comando> [opções]
+     core-kernel agents <comando> [opções]
+
+Grupos:
+  skills               Skills de DDD com o core-kernel (padrões, exemplos, checklists)
+  agents               Subagentes: ddd-architect, ddd-reviewer, core-kernel-migrator
 
 Comandos:
-  list                 Lista as skills disponíveis nesta versão
-  add                  Instala as skills no projeto
-  update               Atualiza as skills instaladas para esta versão
-  check                Falha (exit 1) se as skills estiverem ausentes, editadas ou desatualizadas
+  list                 Lista o que está disponível nesta versão
+  add                  Instala no projeto
+  update               Atualiza o que está instalado para esta versão
+  check                Falha (exit 1) se houver itens ausentes, editados ou desatualizados
 
 Opções:
-  --target <alvo>      claude (.claude/skills), agents (.agents/skills) ou all.
+  --target <alvo>      claude, agents ou all.
+                       skills: claude → .claude/skills, agents → .agents/skills (Codex e outros)
+                       agents: claude → .claude/agents, agents → .codex/agents (Codex, .toml)
                        Padrão do add: as pastas que já existem no projeto, ou claude.
   --cwd <pasta>        Raiz do projeto (padrão: pasta atual)
-  --force              Sobrescreve skills editadas localmente ou de outra origem
+  --force              Sobrescreve itens editados localmente ou de outra origem
   -h, --help           Mostra esta ajuda
   -v, --version        Mostra a versão`;
 
+type Group = "skills" | "agents";
+
 interface Options {
+  group: Group;
   command: string | undefined;
   targets: Target[] | undefined;
   cwd: string | undefined;
@@ -44,9 +53,17 @@ interface Options {
 }
 
 function parse(argv: string[]): Options | string {
-  const options: Options = { command: undefined, targets: undefined, cwd: undefined, force: false };
   const [group, ...rest] = argv;
-  if (group !== "skills") return `Comando desconhecido: ${group ?? "(nenhum)"}`;
+  if (group !== "skills" && group !== "agents") {
+    return `Comando desconhecido: ${group ?? "(nenhum)"}`;
+  }
+  const options: Options = {
+    group,
+    command: undefined,
+    targets: undefined,
+    cwd: undefined,
+    force: false,
+  };
 
   for (let i = 0; i < rest.length; i++) {
     const arg = rest[i];
@@ -64,21 +81,74 @@ function parse(argv: string[]): Options | string {
   return options;
 }
 
-const DESCRIBE_PROBLEM: Record<Exclude<Problem["kind"], "not-installed">, string> = {
-  missing: "ausente",
-  modified: "editada localmente",
-  outdated: "desatualizada",
-  obsolete: "não existe mais no pacote",
-};
+/** O que muda entre os grupos: de onde vem, para onde vai e como se chama. */
+interface GroupOps {
+  dirs: Record<Target, string>;
+  /** Extensão do item instalado em cada target (skills são pastas). */
+  suffix: Record<Target, string>;
+  label: { one: string; many: string; feminine: boolean };
+  list(): { name: string; description: string }[];
+  detect(cwd: string): Target[];
+  installedTargets(cwd: string): Target[] | undefined;
+  install(options: { cwd: string; targets: Target[]; force: boolean }): InstallReport;
+  check(cwd: string): CheckReport;
+}
 
-function printInstall(report: InstallReport, io: Io): void {
-  for (const { target, skill } of report.installed) io.out(`+ ${TARGET_DIRS[target]}/${skill}`);
-  for (const { target, skill } of report.removed) io.out(`- ${TARGET_DIRS[target]}/${skill}`);
-  for (const { target, skill, reason } of report.skipped) {
-    const why = reason === "modified" ? "editada localmente" : "não foi instalada pelo core-kernel";
-    io.err(`! ${TARGET_DIRS[target]}/${skill} mantida: ${why} (use --force para sobrescrever)`);
+function groupOps(group: Group, io: Io): GroupOps {
+  const version = io.version;
+  if (group === "skills") {
+    const source = join(io.packageRoot, "skills");
+    return {
+      dirs: TARGET_DIRS,
+      suffix: { claude: "", agents: "" },
+      label: { one: "skill", many: "skills", feminine: true },
+      list: () => listSkills(source),
+      detect: detectTargets,
+      installedTargets: (cwd) => {
+        const targets = readLock(cwd)?.targets;
+        return targets && targets.length > 0 ? targets : undefined;
+      },
+      install: (options) => installSkills({ source, version, ...options }),
+      check: (cwd) => checkSkills({ source, cwd, version }),
+    };
   }
-  if (report.unchanged.length > 0) io.out(`= ${report.unchanged.length} já atualizada(s)`);
+  const source = join(io.packageRoot, "agents");
+  return {
+    dirs: AGENT_DIRS,
+    suffix: { claude: ".md", agents: ".toml" },
+    label: { one: "agente", many: "agentes", feminine: false },
+    list: () => listAgents(source),
+    detect: detectAgentTargets,
+    installedTargets: (cwd) => readLock(cwd)?.agents?.targets,
+    install: (options) => installAgents({ source, version, ...options }),
+    check: (cwd) => checkAgents({ source, cwd, version }),
+  };
+}
+
+function describeProblem(kind: Exclude<Problem["kind"], "not-installed">, feminine: boolean) {
+  const end = feminine ? "a" : "o";
+  return {
+    missing: "ausente",
+    modified: `editad${end} localmente`,
+    outdated: `desatualizad${end}`,
+    obsolete: "não existe mais no pacote",
+  }[kind];
+}
+
+function printInstall(report: InstallReport, ops: GroupOps, io: Io): void {
+  const where = (target: Target, name: string) =>
+    `${ops.dirs[target]}/${name}${ops.suffix[target]}`;
+  const end = ops.label.feminine ? "a" : "o";
+  for (const { target, name } of report.installed) io.out(`+ ${where(target, name)}`);
+  for (const { target, name } of report.removed) io.out(`- ${where(target, name)}`);
+  for (const { target, name, reason } of report.skipped) {
+    const why =
+      reason === "modified" ? `editad${end} localmente` : `não foi instalad${end} pelo core-kernel`;
+    io.err(`! ${where(target, name)} mantid${end}: ${why} (use --force para sobrescrever)`);
+  }
+  if (report.unchanged.length > 0) {
+    io.out(`= ${report.unchanged.length} já atualizad${end}(s)`);
+  }
 }
 
 /** Executa o CLI e devolve o exit code. */
@@ -99,62 +169,61 @@ export function run(argv: string[], io: Io): number {
     return 1;
   }
 
-  const source = join(io.packageRoot, "skills");
+  const { group } = options;
+  const ops = groupOps(group, io);
   const cwd = options.cwd ?? io.cwd;
-  const context = { source, cwd, version: io.version };
+  const { one, many, feminine } = ops.label;
 
   switch (options.command) {
     case "list":
-      for (const { name, description } of listSkills(source)) io.out(`${name}\n  ${description}`);
+      for (const { name, description } of ops.list()) io.out(`${name}\n  ${description}`);
       return 0;
 
     case "add":
       printInstall(
-        installSkills({
-          ...context,
-          targets: options.targets ?? detectTargets(cwd),
-          force: options.force,
-        }),
+        ops.install({ cwd, targets: options.targets ?? ops.detect(cwd), force: options.force }),
+        ops,
         io,
       );
       return 0;
 
     case "update": {
-      const lock = readLock(cwd);
-      if (!lock) {
-        io.err("Nenhuma skill instalada. Rode: core-kernel skills add");
+      const installed = ops.installedTargets(cwd);
+      if (!installed) {
+        io.err(
+          `Nenhum${feminine ? "a" : ""} ${one} instalad${feminine ? "a" : "o"}. Rode: core-kernel ${group} add`,
+        );
         return 1;
       }
       printInstall(
-        installSkills({
-          ...context,
-          targets: options.targets ?? lock.targets,
-          force: options.force,
-        }),
+        ops.install({ cwd, targets: options.targets ?? installed, force: options.force }),
+        ops,
         io,
       );
       return 0;
     }
 
     case "check": {
-      const { ok, problems } = checkSkills(context);
+      const { ok, problems } = ops.check(cwd);
+      const Many = many[0]?.toUpperCase() + many.slice(1);
       if (ok) {
-        io.out(`Skills do core-kernel ${io.version} em dia.`);
+        io.out(`${Many} do core-kernel ${io.version} em dia.`);
         return 0;
       }
       for (const problem of problems) {
-        if (problem.kind === "not-installed") io.err("Skills do core-kernel não instaladas.");
-        else
-          io.err(
-            `${TARGET_DIRS[problem.target]}/${problem.skill}: ${DESCRIBE_PROBLEM[problem.kind]}`,
-          );
+        if (problem.kind === "not-installed") {
+          io.err(`${Many} do core-kernel não instalad${feminine ? "a" : "o"}s.`);
+        } else {
+          const where = `${ops.dirs[problem.target]}/${problem.name}${ops.suffix[problem.target]}`;
+          io.err(`${where}: ${describeProblem(problem.kind, feminine)}`);
+        }
       }
-      io.err("Rode: core-kernel skills update (ou add, se nunca instalou)");
+      io.err(`Rode: core-kernel ${group} update (ou add, se nunca instalou)`);
       return 1;
     }
 
     default:
-      io.err(`Comando desconhecido: skills ${options.command ?? ""}`.trim());
+      io.err(`Comando desconhecido: ${group} ${options.command ?? ""}`.trim());
       io.err("Veja: core-kernel --help");
       return 1;
   }

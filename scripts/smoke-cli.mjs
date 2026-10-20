@@ -1,4 +1,4 @@
-// Executa o bin publicado (dist/cli) como um consumidor faria: instala as skills num projeto
+// Executa o bin publicado (dist/cli) como um consumidor faria: instala skills e agentes num projeto
 // temporário, verifica com `check` e confere os arquivos.
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
@@ -19,7 +19,15 @@ try {
   assert.ok(existsSync(join(project, ".agents", "skills", "ddd-entity", "SKILL.md")));
   assert.ok(existsSync(join(project, "core-kernel.skills.json")));
   assert.match(cli("skills", "check"), /em dia/);
-  console.log(`CLI ok: ${skills.length} skills instaladas em .claude/skills e .agents/skills`);
+  cli("agents", "add", "--target", "all");
+  const agents = readdirSync(join(project, ".claude", "agents"));
+  assert.ok(agents.includes("ddd-reviewer.md"), `esperava os agentes, veio: ${agents}`);
+  assert.ok(existsSync(join(project, ".codex", "agents", "ddd-reviewer.toml")));
+  assert.match(cli("agents", "check"), /em dia/);
+  assert.match(cli("skills", "check"), /em dia/);
+  console.log(
+    `CLI ok: ${skills.length} skills e ${agents.length} agentes instalados (Claude Code e Codex)`,
+  );
 } finally {
   rmSync(project, { recursive: true, force: true });
 }

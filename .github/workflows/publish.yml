@@ -20,22 +20,23 @@ jobs:
           node-version: 22
           registry-url: https://registry.npmjs.org
 
-      # A tag precisa bater com a versão do package.json (ex.: v0.1.0-beta.0 ↔ 0.1.0-beta.0).
-      # Prerelease publica na dist-tag do identificador (beta, rc...), nunca em latest.
-      - id: release
+      # A tag (vX.Y.Z) precisa bater com a versão do core-kernel no package.json.
+      - name: Tag confere com o package.json
         run: |
           VERSION=$(node -p "require('./package.json').version")
           if [ "v$VERSION" != "$GITHUB_REF_NAME" ]; then
             echo "::error::Tag $GITHUB_REF_NAME não corresponde à versão $VERSION do package.json"
             exit 1
           fi
-          DIST_TAG=$(node -p "const p = '$VERSION'.split('-')[1]; p ? p.split('.')[0] : 'latest'")
-          echo "dist_tag=$DIST_TAG" >> "$GITHUB_OUTPUT"
-          echo "Publicando $VERSION com a dist-tag $DIST_TAG"
 
       - run: bun install --frozen-lockfile
       - run: bun run verify
-      # npm (não bun publish) porque só o npm CLI gera atestado de provenance.
-      - run: npm publish --provenance --access public --ignore-scripts --tag ${{ steps.release.outputs.dist_tag }}
+      # changeset publish publica cada pacote do repositório (core-kernel e core-kernel-check)
+      # cuja versão ainda não está no registro, via npm (que gera o atestado de provenance).
+      # Em prerelease (.changeset/pre.json), usa a dist-tag do modo pre, nunca latest.
+      # Os scripts do pacote ficam desligados: o verify já rodou acima.
+      - run: ./node_modules/.bin/changeset publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"
+          npm_config_ignore_scripts: "true"

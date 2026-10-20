@@ -177,30 +177,74 @@ assertFail(await useCase.execute({ orderId: "..." }), "UNEXPECTED");
 `assertOk`/`assertFail` funcionam com qualquer test runner. `SequentialIdGenerator().install()`
 torna ids previsíveis (lembre que ids de eventos também consomem a sequência).
 
-## Skills para assistentes de código
+## Recursos para agentes de código
 
-O pacote traz 10 skills (formato Agent Skills) que ensinam um assistente de código a usar a
-lib nos padrões dela. Instale no projeto:
+O core-kernel ensina um assistente de código (Claude Code, Codex e outros) a usar a lib nos
+padrões dela, em quatro camadas:
+
+| Recurso | O que faz | Claude Code | Codex |
+|---|---|---|---|
+| **Skills** (11) | Padrões, exemplos e checklists de cada bloco | plugin ou `skills add` | `skills add --target agents` |
+| **Agentes** | `ddd-architect` (modela antes de codar), `ddd-reviewer` (revisa diffs), `core-kernel-migrator` (migra projetos) | plugin ou `agents add` | `agents add --target agents` (`.codex/agents/*.toml`) |
+| **Checker** ([`core-kernel-check`](./packages/check)) | Acusa, com tipos, os bugs que compilam: id tipado no SQL, erro decidido pelo texto, `try/catch` em volta de `execute()`... | automático a cada edição (hook do plugin) | no CI ou à mão |
+| **`llms.txt`** | Resumo da API e regras para assistentes | — | — |
+
+### Plugin do Claude Code (recomendado)
 
 ```bash
-bunx core-kernel skills add
+claude plugin marketplace add macndesign/core-kernel
+claude plugin install core-kernel@core-kernel
+bun add -d core-kernel-check   # liga os guardrails automáticos
+```
+
+O plugin traz as skills, os agentes e dois hooks: a cada `Edit`/`Write` de um `.ts`, roda o
+`core-kernel-check` instalado no projeto e devolve os achados ao agente, que corrige na hora
+(sem o checker instalado, o hook não faz nada); no início da sessão, informa a versão do
+core-kernel e o que está desatualizado. A versão do plugin acompanha a do pacote no npm.
+
+Para o time inteiro, versione em `.claude/settings.json` (cada pessoa ainda confirma a
+instalação do plugin):
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "core-kernel": { "source": { "source": "github", "repo": "macndesign/core-kernel" } }
+  },
+  "enabledPlugins": { "core-kernel@core-kernel": true }
+}
+```
+
+### Skills e agentes pelo CLI (sem plugin, ou no Codex)
+
+```bash
+bunx core-kernel skills add            # .claude/skills e/ou .agents/skills
+bunx core-kernel agents add            # .claude/agents e/ou .codex/agents
 ```
 
 | Comando | O que faz |
 |---|---|
-| `skills add [--target claude\|agents\|all]` | Copia as skills para `.claude/skills` (Claude Code) e/ou `.agents/skills` (Codex e outros). Sem `--target`, usa as pastas que já existem no projeto (ou `.claude`). |
-| `skills update` | Atualiza para a versão instalada do core-kernel. |
-| `skills check` | Falha (exit 1) se estiverem ausentes, editadas ou desatualizadas — útil no CI. |
-| `skills list` | Lista as skills disponíveis. |
+| `skills add`, `agents add` `[--target claude\|agents\|all]` | Instala. `claude` → `.claude/`; `agents` → `.agents/skills` (skills) e `.codex/agents` (agentes, em TOML). Sem `--target`, usa as pastas que já existem no projeto (ou `.claude`). |
+| `skills update`, `agents update` | Atualiza para a versão instalada do core-kernel. |
+| `skills check`, `agents check` | Falha (exit 1) se houver itens ausentes, editados ou desatualizados — útil no CI. |
+| `skills list`, `agents list` | Lista o que está disponível. |
 
-O estado fica em `core-kernel.skills.json` (versione junto com as skills). Skills editadas
-localmente ou com o mesmo nome de outra origem **nunca são sobrescritas** sem `--force`.
+O estado fica em `core-kernel.skills.json` (versione junto). Itens editados localmente ou com
+o mesmo nome de outra origem **nunca são sobrescritos** sem `--force`.
 
 Skills: `ddd-result-errors`, `ddd-value-object`, `ddd-entity`, `ddd-aggregate-events`,
 `ddd-use-case`, `ddd-repository`, `ddd-domain-service`, `ddd-dto`, `ddd-query-cqrs`,
-`ddd-testing`. Todo exemplo de código delas é compilado e testado no CI desta lib.
+`ddd-testing`, `ddd-migration`. Todo exemplo de código delas é compilado, testado e passa no
+`core-kernel-check` no CI desta lib.
 
-O pacote também publica um `llms.txt` com o resumo da API e as regras para assistentes.
+### Checker no CI
+
+```bash
+bunx core-kernel-check        # exit 1 se houver achados; --json para ferramentas
+```
+
+As regras (CK001–CK008), a supressão com motivo e a API estão no
+[README do core-kernel-check](./packages/check/README.md). O efeito do plugin é medido com
+`claude plugin eval` ([docs/evals.md](./docs/evals.md)).
 
 ## Publicando uma lib sobre o core-kernel
 
