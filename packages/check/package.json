@@ -1,0 +1,49 @@
+{
+  "name": "core-kernel-check",
+  "version": "0.0.0",
+  "description": "Verificador com tipos para projetos que usam o core-kernel: pega os erros que compilam mas quebram (ids em SQL, status por texto de erro, throw/new Date() no domínio...)",
+  "keywords": [
+    "core-kernel",
+    "ddd",
+    "lint",
+    "typescript",
+    "static-analysis"
+  ],
+  "license": "MIT",
+  "author": "macndesign <macndesign@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/macndesign/core-kernel.git",
+    "directory": "packages/check"
+  },
+  "homepage": "https://github.com/macndesign/core-kernel/tree/main/packages/check#readme",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "core-kernel-check": "./dist/bin.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "bun test ./__tests__",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "smoke": "node dist/bin.js --project __fixtures__/projeto/tsconfig.json __fixtures__/projeto/src/base.ts",
+    "verify": "bun run typecheck && bun test ./__tests__ && bun run build && bun run smoke"
+  },
+  "dependencies": {
+    "typescript": "~5.9.2"
+  },
+  "peerDependencies": {
+    "core-kernel": "^0.2.0 || ^0.3.0"
+  }
+}

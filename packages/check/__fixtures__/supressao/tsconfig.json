@@ -1,0 +1,4 @@
+{
+  "extends": "../projeto/tsconfig.json",
+  "include": [".", "../projeto/src/types"]
+}
