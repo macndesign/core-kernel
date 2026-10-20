@@ -98,7 +98,7 @@ describe("installSkills", () => {
     const report = installSkills({ source, cwd: project, version: "1.1.0", targets: ["claude"] });
 
     expect(readFileSync(installed("claude", "ddd-entity"), "utf8")).toBe("minha versão");
-    expect(report.skipped).toEqual([{ target: "claude", skill: "ddd-entity", reason: "modified" }]);
+    expect(report.skipped).toEqual([{ target: "claude", name: "ddd-entity", reason: "modified" }]);
   });
 
   it("--force sobrescreve skill editada", () => {
@@ -117,7 +117,7 @@ describe("installSkills", () => {
     const report = installSkills({ source, cwd: project, version: "1.0.0", targets: ["claude"] });
 
     expect(readFileSync(installed("claude", "ddd-entity"), "utf8")).toBe("skill de outra origem");
-    expect(report.skipped).toEqual([{ target: "claude", skill: "ddd-entity", reason: "foreign" }]);
+    expect(report.skipped).toEqual([{ target: "claude", name: "ddd-entity", reason: "foreign" }]);
   });
 
   it("atualiza skills não modificadas para a nova versão do pacote", () => {
@@ -127,7 +127,7 @@ describe("installSkills", () => {
     const report = installSkills({ source, cwd: project, version: "1.1.0", targets: ["claude"] });
 
     expect(readFileSync(installed("claude", "ddd-entity"), "utf8")).toContain("nova versão");
-    expect(report.installed).toEqual([{ target: "claude", skill: "ddd-entity" }]);
+    expect(report.installed).toEqual([{ target: "claude", name: "ddd-entity" }]);
     expect(readLock(project)?.version).toBe("1.1.0");
   });
 
@@ -138,7 +138,7 @@ describe("installSkills", () => {
     const report = installSkills({ source, cwd: project, version: "1.1.0", targets: ["claude"] });
 
     expect(existsSync(installed("claude", "ddd-use-case"))).toBe(false);
-    expect(report.removed).toEqual([{ target: "claude", skill: "ddd-use-case" }]);
+    expect(report.removed).toEqual([{ target: "claude", name: "ddd-use-case" }]);
     expect(Object.keys(readLock(project)?.skills.claude ?? {})).toEqual(["ddd-entity"]);
   });
 
@@ -151,7 +151,7 @@ describe("installSkills", () => {
 
     expect(readFileSync(installed("claude", "ddd-use-case"), "utf8")).toBe("editada");
     expect(report.skipped).toEqual([
-      { target: "claude", skill: "ddd-use-case", reason: "modified" },
+      { target: "claude", name: "ddd-use-case", reason: "modified" },
     ]);
   });
 
@@ -200,9 +200,9 @@ describe("checkSkills", () => {
 
     expect(report.ok).toBe(false);
     expect(report.problems).toEqual([
-      { kind: "modified", target: "claude", skill: "ddd-entity" },
-      { kind: "missing", target: "claude", skill: "ddd-new" },
-      { kind: "missing", target: "claude", skill: "ddd-use-case" },
+      { kind: "modified", target: "claude", name: "ddd-entity" },
+      { kind: "missing", target: "claude", name: "ddd-new" },
+      { kind: "missing", target: "claude", name: "ddd-use-case" },
     ]);
   });
 
@@ -211,7 +211,7 @@ describe("checkSkills", () => {
     rmSync(join(source, "ddd-use-case"), { recursive: true });
 
     expect(checkSkills({ source, cwd: project, version: "1.1.0" }).problems).toEqual([
-      { kind: "obsolete", target: "claude", skill: "ddd-use-case" },
+      { kind: "obsolete", target: "claude", name: "ddd-use-case" },
     ]);
   });
 
@@ -220,7 +220,7 @@ describe("checkSkills", () => {
     writeSkill("ddd-entity", "mudou no pacote");
 
     expect(checkSkills({ source, cwd: project, version: "1.1.0" }).problems).toEqual([
-      { kind: "outdated", target: "claude", skill: "ddd-entity" },
+      { kind: "outdated", target: "claude", name: "ddd-entity" },
     ]);
   });
 });

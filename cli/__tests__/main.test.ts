@@ -141,3 +141,36 @@ describe("skills add / update / check", () => {
     ]);
   });
 });
+
+describe("agents", () => {
+  beforeEach(() => {
+    mkdirSync(join(root, "pkg", "agents"), { recursive: true });
+    writeFileSync(
+      join(root, "pkg", "agents", "ddd-reviewer.md"),
+      "---\nname: ddd-reviewer\ndescription: Revisa\ntools: Read\n---\n\nRevise.\n",
+    );
+  });
+
+  it("list, add, check e update", () => {
+    expect(run(["agents", "list"], io())).toBe(0);
+    expect(out).toEqual(["ddd-reviewer\n  Revisa"]);
+
+    out = [];
+    expect(run(["agents", "check"], io())).toBe(1);
+    expect(err[0]).toBe("Agentes do core-kernel não instalados.");
+    expect(run(["agents", "update"], io())).toBe(1);
+    expect(err.at(-1)).toContain("Nenhum agente instalado. Rode: core-kernel agents add");
+
+    expect(run(["agents", "add", "--target", "all"], io())).toBe(0);
+    expect(out).toEqual(["+ .claude/agents/ddd-reviewer.md", "+ .codex/agents/ddd-reviewer.toml"]);
+
+    out = [];
+    expect(run(["agents", "check"], io())).toBe(0);
+    expect(out).toEqual(["Agentes do core-kernel 1.0.0 em dia."]);
+
+    writeFileSync(join(project, ".codex/agents/ddd-reviewer.toml"), "editado");
+    err = [];
+    expect(run(["agents", "update"], io())).toBe(0);
+    expect(err[0]).toContain(".codex/agents/ddd-reviewer.toml mantido: editado localmente");
+  });
+});

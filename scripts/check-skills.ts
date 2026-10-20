@@ -1,21 +1,45 @@
 // Valida as skills publicadas (skills/) e o llms.txt:
 // 1. Frontmatter de cada SKILL.md (name = pasta, description) e agents/openai.yaml.
-// 2. Todo bloco ```ts das references e do llms.txt compila contra o pacote buildado, passa no
-//    lint do Biome, e os blocos de teste (`// file: x.test.ts`) passam.
+// 2. Frontmatter dos agentes (agents/*.md) e as skills que eles citam.
+// 3. Todo bloco ```ts das references e do llms.txt compila contra o pacote buildado, passa no
+//    lint do Biome e no core-kernel-check (exemplo não pode ensinar um bug), e os blocos de
+//    teste (`// file: x.test.ts`) passam.
 //
 // Convenções dos blocos:
 // - ```ts nocheck   → ignorado (pseudocódigo, assinaturas).
 // - `// file: x.ts` na 1ª linha → nome do arquivo; blocos do mesmo documento podem se
 //   importar (`import { X } from "./x.js"`), como num projeto real.
 //
-// Requer `bun run build` antes: os blocos importam `core-kernel` pelo nome do pacote.
+// Requer `bun run build` antes (os blocos importam `core-kernel` pelo nome do pacote) e o build
+// do packages/check.
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import { $ } from "bun";
 
 const SKILLS_DIR = "skills";
+const AGENTS_DIR = "agents";
 const OUT_DIR = ".skills-check";
 const errors: string[] = [];
+
+function checkAgent(file: string, skills: string[], agentNames: string[]): void {
+  const path = join(AGENTS_DIR, file);
+  const content = readFileSync(path, "utf8");
+  const frontmatter = /^---\r?\n([\s\S]*?)\r?\n---/.exec(content)?.[1];
+  if (!frontmatter) {
+    errors.push(`${path}: frontmatter ausente`);
+    return;
+  }
+  const field = (key: string) =>
+    new RegExp(`^${key}:\\s*(.+)$`, "m").exec(frontmatter)?.[1]?.trim();
+  const name = basename(file, ".md");
+  if (field("name") !== name) errors.push(`${path}: name deve ser igual ao arquivo "${name}"`);
+  if (!field("description")) errors.push(`${path}: description ausente`);
+  if (!field("tools")) errors.push(`${path}: tools ausente (liste as ferramentas do agente)`);
+  for (const [cited] of content.matchAll(/\bddd-[a-z-]*[a-z]\b/g)) {
+    if (!skills.includes(cited) && !agentNames.includes(cited))
+      errors.push(`${path}: cita a skill inexistente "${cited}"`);
+  }
+}
 
 function checkFrontmatter(skill: string): void {
   const file = join(SKILLS_DIR, skill, "SKILL.md");
@@ -78,6 +102,9 @@ for (const skill of skills) {
   blocks += extractBlocks(join(SKILLS_DIR, skill, "SKILL.md"), `${skill}/SKILL`);
 }
 blocks += extractBlocks("llms.txt", "llms");
+const agents = readdirSync(AGENTS_DIR).filter((file) => file.endsWith(".md"));
+const agentNames = agents.map((file) => basename(file, ".md"));
+for (const agent of agents) checkAgent(agent, skills, agentNames);
 
 if (errors.length > 0) {
   for (const error of errors) console.error(error);
@@ -101,10 +128,20 @@ if (lint.exitCode !== 0) {
   console.error("Blocos de código das skills/llms.txt reprovam no lint do Biome.");
   process.exit(1);
 }
+// O próprio checker do core-kernel nos blocos: um exemplo com id no SQL sem `.value`, ou com
+// status decidido pelo texto do erro, ensinaria o bug a quem copia.
+const checker =
+  await $`node packages/check/dist/bin.js --project ${join(OUT_DIR, "tsconfig.json")}`.nothrow();
+if (checker.exitCode !== 0) {
+  console.error("Blocos de código das skills/llms.txt reprovam no core-kernel-check.");
+  process.exit(1);
+}
 // Blocos de teste (*.test.ts) também rodam: o exemplo precisa compilar E se comportar como diz.
 const tests = await $`bun test ./${OUT_DIR}`.nothrow();
 if (tests.exitCode !== 0) {
   console.error("Testes dos blocos de código das skills falharam.");
   process.exit(1);
 }
-console.log(`Skills ok: ${skills.length} skills, ${blocks} blocos de código compilados.`);
+console.log(
+  `Skills ok: ${skills.length} skills, ${agents.length} agentes, ${blocks} blocos de código compilados.`,
+);

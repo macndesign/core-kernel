@@ -31,6 +31,7 @@
     ".claude-plugin/plugin.json",
     "hooks/hooks.json",
     "hooks/*.mjs",
+    "agents",
     "skills",
     "llms.txt",
     "CHANGELOG.md"
@@ -96,7 +97,7 @@
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "check:package": "publint --strict && attw --pack . --profile node16 && node scripts/smoke.mjs && node scripts/smoke.cjs && node scripts/smoke-cli.mjs && node scripts/sync-plugin-version.mjs --check",
-    "verify": "bun run lint && bun run typecheck && bun run test:coverage && bun run build && bun run check:package && bun run check:plugin && bun run check:examples && bun run check:skills && bun run check:checker",
+    "verify": "bun run lint && bun run typecheck && bun run test:coverage && bun run build && bun run check:package && bun run check:plugin && bun run check:examples && bun run check:checker && bun run check:skills",
     "prepublishOnly": "bun run verify",
     "prepare": "node scripts/prepare.mjs",
     "check:examples": "tsc -p examples/tsconfig.json && bun test ./examples",
