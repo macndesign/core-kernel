@@ -53,14 +53,22 @@ O plugin do core-kernel já configura o hook. Para usar sem o plugin, em `.claud
         "matcher": "Edit|Write|MultiEdit",
         "hooks": [{ "type": "command", "command": "npx core-kernel-check --hook", "timeout": 60 }]
       }
+    ],
+    "Stop": [
+      { "hooks": [{ "type": "command", "command": "npx core-kernel-check --hook", "timeout": 120 }] }
     ]
   }
 }
 ```
 
-Com `--hook`, lê o evento no stdin, analisa só o arquivo editado (`.ts`/`.tsx` dentro do
-projeto) e, se houver achados, imprime no stderr e sai com 2: o Claude Code devolve o texto ao
-agente. Qualquer erro interno sai com 0, para nunca travar o agente.
+Com `--hook`, lê o evento no stdin e, se houver achados, imprime no stderr e sai com 2: o
+Claude Code devolve o texto ao agente. Qualquer erro interno sai com 0, para nunca travar o
+agente.
+
+- **PostToolUse** (`Edit`/`Write`): analisa o arquivo editado (`.ts`/`.tsx` dentro do projeto).
+- **Stop**: analisa os `.ts` alterados ou novos segundo o git. Cobre o que o PostToolUse não
+  vê: agentes que editam por Bash (`sed`, heredoc, scripts). O código 2 faz o agente continuar
+  e corrigir antes de encerrar o turno; numa segunda parada seguida, o hook deixa encerrar.
 
 ## API
 

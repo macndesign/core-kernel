@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
-import { mkdtempSync, rmSync, symlinkSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { run } from "../src/cli.js";
@@ -89,6 +90,83 @@ describe("caminhos com outro nome para a mesma pasta", () => {
       );
       expect(await run(["--hook"], { ...t.io, cwd: link })).toBe(2);
       expect(t.err[0]).toContain("CK003");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("--hook no Stop (arquivos alterados segundo o git)", () => {
+  const DIST = join(import.meta.dir, "../../../dist/esm").replaceAll("\\", "/");
+  const BUG =
+    'import { UniqueId } from "core-kernel";\nclass PedidoId extends UniqueId {\n  declare private readonly __b: "PedidoId";\n}\ndeclare function registrar(dado: unknown): void;\nregistrar(PedidoId.generate());\n';
+
+  function repositorio() {
+    const dir = mkdtempSync(join(tmpdir(), "ck-stop-"));
+    const tsconfig = {
+      compilerOptions: {
+        target: "ES2022",
+        module: "NodeNext",
+        moduleResolution: "NodeNext",
+        strict: true,
+        skipLibCheck: true,
+        noEmit: true,
+        types: [],
+        paths: { "core-kernel": [`${DIST}/index.d.ts`] },
+      },
+      include: ["src"],
+    };
+    mkdirSync(join(dir, "src"));
+    writeFileSync(join(dir, "package.json"), '{ "type": "module" }');
+    writeFileSync(join(dir, "tsconfig.json"), JSON.stringify(tsconfig));
+    writeFileSync(join(dir, "src/limpo.ts"), "export const x = 1;\n");
+    const git = (...args: string[]) => execFileSync("git", args, { cwd: dir, stdio: "ignore" });
+    git("init", "-q");
+    git("add", ".");
+    git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "init");
+    return dir;
+  }
+
+  const stop = (dir: string, extra: object = {}) =>
+    JSON.stringify({ cwd: dir, hook_event_name: "Stop", stop_hook_active: false, ...extra });
+
+  it("acusa arquivo novo ou alterado, mesmo editado fora do Edit/Write", async () => {
+    const dir = repositorio();
+    try {
+      writeFileSync(join(dir, "src/novo.ts"), BUG);
+      const t = io(stop(dir));
+      expect(await run(["--hook"], { ...t.io, cwd: dir })).toBe(2);
+      expect(t.err[0]).toContain("Corrija antes de encerrar");
+      expect(t.err[0]).toContain("src/novo.ts:6:11 CK001");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it.each([
+    ["sem alterações", () => {}, {}],
+    [
+      "segunda parada seguida (stop_hook_active)",
+      (dir: string) => writeFileSync(join(dir, "src/novo.ts"), BUG),
+      { stop_hook_active: true },
+    ],
+  ])("%s: sai com 0", async (_, preparar, extra) => {
+    const dir = repositorio();
+    try {
+      preparar(dir);
+      const t = io(stop(dir, extra));
+      expect(await run(["--hook"], { ...t.io, cwd: dir })).toBe(0);
+      expect(t.err).toEqual([]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("fora de um repositório git, sai com 0", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "ck-sem-git-"));
+    try {
+      const t = io(stop(dir));
+      expect(await run(["--hook"], { ...t.io, cwd: dir })).toBe(0);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
