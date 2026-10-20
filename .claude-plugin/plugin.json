@@ -1,0 +1,13 @@
+{
+  "name": "core-kernel",
+  "version": "0.2.0",
+  "description": "Skills, agentes e guardrails (hook com o core-kernel-check) para projetos DDD com o core-kernel",
+  "author": {
+    "name": "macndesign",
+    "email": "macndesign@gmail.com"
+  },
+  "homepage": "https://github.com/macndesign/core-kernel#readme",
+  "repository": "https://github.com/macndesign/core-kernel",
+  "license": "MIT",
+  "keywords": ["ddd", "clean-architecture", "result", "core-kernel"]
+}

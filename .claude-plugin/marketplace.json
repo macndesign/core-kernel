@@ -1,0 +1,21 @@
+{
+  "name": "core-kernel",
+  "owner": {
+    "name": "macndesign",
+    "email": "macndesign@gmail.com"
+  },
+  "metadata": {
+    "description": "Plugin do core-kernel: skills de DDD, agentes especializados e o hook do core-kernel-check"
+  },
+  "plugins": [
+    {
+      "name": "core-kernel",
+      "description": "Skills, agentes e guardrails para projetos DDD com o core-kernel",
+      "source": {
+        "source": "npm",
+        "package": "core-kernel"
+      },
+      "category": "development"
+    }
+  ]
+}
