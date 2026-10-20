@@ -398,7 +398,16 @@ volta de `execute()`). Branch `feat/recursos-para-agentes`.
 - [x] Evals (`evals/`, 4 casos) + workflow manual `Evals`. `claude plugin eval` falha no
       Windows (`ENAMETOOLONG`); rodar no workflow ou em macOS/Linux.
 - [ ] Primeira rodada completa dos evals e baseline em `docs/evals.md`.
-- [ ] Release `core-kernel@0.3.0` + `core-kernel-check@0.1.0` (`changeset publish`).
+- [x] Betas `0.3.0-beta.0` e `0.3.0-beta.1` para validar o plugin instalado pelo npm. Achados:
+      o marketplace instala a `latest` (foi preciso fixar `source.version` na beta); o agente
+      do Claude Code editou arquivos por Bash e o `PostToolUse` não disparou, o que levou ao
+      hook `Stop` (analisa os `.ts` alterados segundo o git); o Changesets reescrevia a
+      `peerDependency` do checker (`onlyUpdatePeerDependentsWhenOutOfRange`).
+- [x] Piloto com a `biblioteca-api` (Hono + PGlite): hooks validados no CLI (PostToolUse e
+      Stop barraram o CK001 nos testes forçados); nas tarefas realistas, o agente acertou os
+      padrões de primeira. Sessões no Cowork não carregam o plugin do Claude Code.
+- [x] Release `core-kernel@0.3.0` + `core-kernel-check@0.1.0` (`changeset publish`, tag
+      `v0.3.0`, 2026-10-20), marketplace de volta à `latest`.
 
 ## 6. Decisões
 
