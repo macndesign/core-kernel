@@ -1,6 +1,6 @@
 {
   "name": "core-kernel",
-  "version": "0.3.0-beta.1",
+  "version": "0.3.0",
   "description": "Blocos base de DDD/Clean Architecture (Result, Entity, ValueObject, UseCase, ports) para Bun e Node",
   "keywords": [
     "ddd",
