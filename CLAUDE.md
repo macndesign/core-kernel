@@ -67,6 +67,27 @@ Mudança incompatível na API pública é *breaking change* (SemVer). Quando as 
   build próprio (`tsconfig.cli.json`, só ESM) e testes em `cli/__tests__/`. Mensagens do CLI em
   português.
 
+## Agentes, plugin e checker (`agents/`, `.claude-plugin/`, `hooks/`, `packages/check`)
+
+- **Agentes** em `agents/<nome>.md` (frontmatter `name` = arquivo, `description`, `tools`,
+  `model`; corpo = prompt). É a fonte única: o CLI copia para `.claude/agents` e gera
+  `.codex/agents/<nome>.toml`. O `check:skills` valida o frontmatter e as skills citadas.
+- **Plugin**: `.claude-plugin/plugin.json` vai no pacote npm (o marketplace em
+  `.claude-plugin/marketplace.json` aponta para ele com fonte npm). A versão do plugin é
+  sincronizada pelo `version-packages`; o `check:package` falha se divergir. `check:plugin`
+  valida o tarball com `claude plugin validate --strict` (pula sem o CLI do Claude).
+- **Hooks** (`hooks/*.mjs`) rodam no projeto do usuário: sem dependências, e qualquer falha
+  sai com 0 (o hook nunca pode travar o agente).
+- **`packages/check`** é o pacote `core-kernel-check` (workspace; o root também é membro, com
+  `"."` nos `workspaces`, para o Changesets versionar os dois). Traz o próprio TypeScript 5.9.
+  **Regra nova = fixture positiva e negativa**: em `__fixtures__/projeto/src/`, marque cada
+  linha que deve acusar com `// espera: CKxxx`; linhas sem marca não podem acusar. O
+  `rules.test.ts` compara as marcas com os achados e exige que as fixtures compilem.
+  Toda regra reconhece os tipos do core-kernel pela origem da declaração
+  (`core-kernel-types.ts`), nunca por nome de pasta ou de variável.
+- **Evals** em `evals/` (`claude plugin eval`): têm custo; rodam pelo workflow manual
+  `Evals`. Ver `docs/evals.md`.
+
 ## Build
 
 `scripts/build.ts` roda o `tsc` para a lib duas vezes (`tsconfig.esm.json` → `dist/esm`,
@@ -92,13 +113,16 @@ resolver isso.
 ## Release (Changesets)
 
 1. **Todo PR com mudança visível para quem usa a lib** inclui um changeset: `bun run changeset`
-   (ou um arquivo `.changeset/<nome>.md` com o frontmatter `"core-kernel": patch|minor`).
+   (ou um arquivo `.changeset/<nome>.md` com o frontmatter `"core-kernel": patch|minor`, ou
+   `"core-kernel-check": ...` para o checker).
    Em 0.x, mudança incompatível é **minor**.
 2. Para lançar: `bun run version-packages` aplica os changesets, atualiza a versão e o
    `CHANGELOG.md`. Commit: `chore: release vX.Y.Z`.
 3. `git tag vX.Y.Z && git push origin main --tags` → o `publish.yml` confere se a tag bate com
-   o `package.json`, roda o `verify` e publica com provenance. Prerelease (`-beta.N`) vai
-   para a dist-tag `beta`, nunca para `latest`. Requer o secret `NPM_TOKEN` no GitHub.
+   o `package.json` do core-kernel, roda o `verify` e publica com `changeset publish` (com
+   provenance) todo pacote cuja versão ainda não está no registro — o core-kernel e o
+   core-kernel-check. Prerelease (modo `pre`) vai para a dist-tag do modo, nunca para
+   `latest`. Requer o secret `NPM_TOKEN` no GitHub.
 
 Pré-release (opcional, para testar mudanças grandes): `bunx changeset pre enter beta` antes do
 `version-packages`; enquanto `.changeset/pre.json` existir, as versões saem como `-beta.N` e os

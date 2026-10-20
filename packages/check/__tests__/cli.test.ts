@@ -1,4 +1,6 @@
 import { describe, expect, it } from "bun:test";
+import { mkdtempSync, rmSync, symlinkSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { run } from "../src/cli.js";
 
@@ -71,5 +73,24 @@ describe("--hook", () => {
     const t = io(stdin);
     expect(await run(["--hook"], t.io)).toBe(0);
     expect(t.err).toEqual([]);
+  });
+});
+
+describe("caminhos com outro nome para a mesma pasta", () => {
+  // Link para o projeto: o mesmo caso dos nomes curtos 8.3 do Windows (C:\Users\T_MARI~1),
+  // em que o projeto chega por um caminho e o TypeScript usa outro.
+  it("acusa no hook mesmo com o projeto aberto por um link", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "ck-link-"));
+    const link = join(dir, "projeto");
+    symlinkSync(PROJECT, link, "junction");
+    try {
+      const t = io(
+        JSON.stringify({ cwd: link, tool_input: { file_path: join(link, "src/ck003.ts") } }),
+      );
+      expect(await run(["--hook"], { ...t.io, cwd: link })).toBe(2);
+      expect(t.err[0]).toContain("CK003");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

@@ -18,7 +18,11 @@ jobs:
       - run: bun run build
       - run: bun run check:package
       - run: bun run check:examples
+      - run: bun run check:checker
       - run: bun run check:skills
+      # Valida o plugin do Claude Code a partir do tarball do npm.
+      - run: npm install -g @anthropic-ai/claude-code
+      - run: bun run check:plugin
       # Tipos publicados funcionam para consumidores com o TypeScript mínimo suportado.
       - run: bun run check:ts-compat
       - uses: actions/upload-artifact@v4

@@ -1,3 +1,4 @@
+import { existsSync, realpathSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import ts from "typescript";
 import { ck001 } from "./rules/ck001-id-sem-value.js";
@@ -99,7 +100,15 @@ function readConfig(configPath: string): ts.ParsedCommandLine {
   return parsed;
 }
 
-const normalize = (file: string) => resolve(file).replaceAll("\\", "/").toLowerCase();
+/**
+ * Caminho comparável: absoluto, real (resolve links e nomes curtos 8.3 do Windows, como
+ * `T_MARI~1`, que o TypeScript expande) e sem diferença de barra ou caixa.
+ */
+function normalize(file: string): string {
+  const absolute = resolve(file);
+  const real = existsSync(absolute) ? realpathSync.native(absolute) : absolute;
+  return real.replaceAll("\\", "/").toLowerCase();
+}
 
 const analyzable = (file: string) =>
   /\.(c|m)?tsx?$/.test(file) &&

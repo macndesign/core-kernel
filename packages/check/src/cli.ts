@@ -1,3 +1,4 @@
+import { existsSync, realpathSync } from "node:fs";
 import { isAbsolute, relative, resolve } from "node:path";
 import { ConfigError, check } from "./program.js";
 import type { Finding } from "./types.js";
@@ -33,6 +34,9 @@ const isTypeScript = (file: string) =>
   !/\.d\.(c|m)?ts$/.test(file) &&
   !/[\\/]node_modules[\\/]/.test(file);
 
+/** Caminho real (links e nomes curtos 8.3 do Windows resolvidos), para comparar pastas. */
+const real = (path: string) => (existsSync(path) ? realpathSync.native(path) : path);
+
 /**
  * Modo hook: nunca trava o agente por falha do checker. Achados → stderr e código 2 (o Claude
  * Code devolve o stderr ao agente); qualquer outra coisa → 0.
@@ -45,8 +49,8 @@ async function runHook(io: Io): Promise<number> {
     };
     const filePath = event.tool_input?.file_path;
     if (!filePath) return 0;
-    const root = process.env.CLAUDE_PROJECT_DIR ?? event.cwd ?? io.cwd;
-    const file = resolve(root, filePath);
+    const root = real(process.env.CLAUDE_PROJECT_DIR ?? event.cwd ?? io.cwd);
+    const file = real(resolve(root, filePath));
     const inside = relative(root, file);
     if (!isTypeScript(file) || inside.startsWith("..") || isAbsolute(inside)) return 0;
 

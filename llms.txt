@@ -238,9 +238,12 @@ describe("ConfirmOrderUseCase", () => {
 
 Other test helpers: `new SequentialIdGenerator("order").install()` makes ids predictable (event ids share the sequence; returns a restore function); `assertFail(result, code)` matches `error.code` or any validation issue code; `InMemoryRepository`: `new InMemoryRepository([...initial])`, `items`, `size`, `seed()`, `clear()`; `create` of a duplicate and `update` of a missing entity throw; extend it and use `this.find` / `this.filter` for custom queries (they honour `failNext`; if you read `this.store` directly, call `this.throwPendingFailure()` first).
 
-## Skills
+## Skills, agents and checker
 
-Agent skills with detailed patterns ship in the package: `bunx core-kernel skills add` installs them into `.claude/skills` and/or `.agents/skills` (`skills update`, `skills check`).
+- Agent skills with detailed patterns ship in the package: `bunx core-kernel skills add` installs them into `.claude/skills` and/or `.agents/skills` (`skills update`, `skills check`). `ddd-migration` is the playbook for migrating a project to core-kernel.
+- Subagents `ddd-architect` (model before coding, read-only), `ddd-reviewer` (review a diff, runs the checker) and `core-kernel-migrator`: `bunx core-kernel agents add` installs them into `.claude/agents` and/or `.codex/agents` (TOML).
+- `core-kernel-check` (separate dev dependency) flags, with types, the mistakes that compile: typed id passed to an untyped parameter such as `pool.query(sql, [order.id])` (CK001, use `.value`), `AppError` handled as text (CK002, use `code`/`kind`), `try/catch` around `await useCase.execute()` (CK003, `execute` never rejects; the original exception is in `error.cause`), `throw`/`new Date()`/`unwrap()` in the domain or in `handle` (CK004–CK006), `result.map` used for side effects (CK007), `instanceof` on core-kernel errors (CK008). Run `bunx core-kernel-check` after editing and fix every finding.
+- Claude Code plugin (skills, agents, and a hook that runs the checker on every edit): `claude plugin marketplace add macndesign/core-kernel` then `claude plugin install core-kernel@core-kernel`.
 
 ## Optional
 

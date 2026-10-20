@@ -5,9 +5,9 @@
   "keywords": [
     "core-kernel",
     "ddd",
-    "lint",
     "typescript",
-    "static-analysis"
+    "lint",
+    "claude-code"
   ],
   "license": "MIT",
   "author": "macndesign <macndesign@gmail.com>",
@@ -17,6 +17,9 @@
     "directory": "packages/check"
   },
   "homepage": "https://github.com/macndesign/core-kernel/tree/main/packages/check#readme",
+  "bugs": {
+    "url": "https://github.com/macndesign/core-kernel/issues"
+  },
   "type": "module",
   "engines": {
     "node": ">=20"
