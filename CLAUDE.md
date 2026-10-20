@@ -129,6 +129,11 @@ Pré-release (opcional, para testar mudanças grandes): `bunx changeset pre ente
 changesets consumidos ficam em `.changeset/pre/` (vão para o git). Para voltar ao normal:
 `bunx changeset pre exit` e `bun run version-packages`.
 
+O marketplace instala o plugin pelo npm na dist-tag `latest`, a menos que
+`.claude-plugin/marketplace.json` fixe `source.version`. Durante uma beta que o plugin precisa
+testar, fixe a versão beta ali; ao lançar a versão final, **remova o `version`** para o
+plugin voltar a acompanhar a `latest`.
+
 Nunca envie uma tag de versão já publicada (ex.: `v0.0.0`, publicada manualmente).
 Logo após publicar, o registro do npm pode responder com cache antigo por alguns minutos:
 confira em npmjs.com antes de concluir que algo falhou.

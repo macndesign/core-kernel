@@ -13,7 +13,8 @@
       "description": "Skills, agentes e guardrails para projetos DDD com o core-kernel",
       "source": {
         "source": "npm",
-        "package": "core-kernel"
+        "package": "core-kernel",
+        "version": "0.3.0-beta.0"
       },
       "category": "development"
     }
