@@ -19,6 +19,9 @@ domínio que devolvem `Result`.
 - Construtor `private` (ou `protected` se for base de herança). Duas fábricas estáticas:
   - `create(input)`: valida invariantes (VOs + `Guard`), gera o id, devolve `Result`;
   - `restore(props, id)`: reidrata do banco **sem validar** — usada só por mappers/repositórios.
+- O construtor da `Entity` já faz uma cópia rasa das props: passe `props` direto nas fábricas
+  (`new Order(props, id)`, sem `{ ...props }`). Arrays e objetos dentro das props continuam
+  compartilhados com quem chamou; copie esses na fábrica se o chamador puder alterá-los depois.
 - `props` são `protected`: expor getters para o que o mundo externo precisa ler.
 - Mudança de estado só por **métodos de domínio com nome do negócio** (`confirm`, `cancel`,
   `reassign`), que devolvem `Result<void, ...>`. Nunca setters. Valide com retorno antecipado e

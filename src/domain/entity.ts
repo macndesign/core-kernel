@@ -10,6 +10,9 @@ const ENTITY_BRAND = Symbol.for("core-kernel/Entity");
  * - `static create(input): Result<X, ...>` valida invariantes, gera o id e emite eventos;
  * - `static restore(props, id): X` reidrata do repositório, sem validar nem emitir eventos;
  * - mudanças de estado só por métodos de domínio que devolvem `Result` (nunca setters).
+ *
+ * O construtor faz uma cópia rasa de `props`: as fábricas passam `props` direto, sem
+ * `{ ...props }`. Arrays e objetos internos continuam compartilhados com quem chamou.
  */
 export abstract class Entity<P extends object, Id extends UniqueId = UniqueId> {
   readonly id: Id;
