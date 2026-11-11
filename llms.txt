@@ -7,7 +7,7 @@ Rules an assistant must follow when writing code with core-kernel:
 - Never throw for expected failures. Return `Result.fail(new XxxError(...))`. `throw` is only for API misuse or bugs.
 - Read `result.value` / `result.error` only after narrowing: `if (r.isFail()) return r;` then `r.value`. `if (!r.ok)` also narrows.
 - A `Fail<E>` can be returned as any `Result<U, E'>` when `E` is part of `E'`, so propagate failures with `return r`.
-- Entities and value objects have a `private constructor` and a `static create(...)` returning `Result`. Entities also have `static restore(props, id)` for rehydration (no validation, no events).
+- Entities and value objects have a `private constructor` and a `static create(...)` returning `Result`. Entities also have `static restore(props, id)` for rehydration (no validation, no events). The `Entity` constructor already makes a shallow copy of `props`: pass them as is (`new Order(props, id)`, no `{ ...props }`); copy nested arrays/objects yourself if the caller may mutate them.
 - State changes only through domain methods that return `Result<void, ...>`. No setters, no public `props`.
 - Repositories return `T | null` and throw on infrastructure failure. Use cases turn `null` into `NotFoundError`. Extend `BaseUseCase` so thrown errors become `UnexpectedError`.
 - Repositories hold writes + `findById` only. Screen/list reads go through query ports that return DTOs.

@@ -234,6 +234,9 @@ describe("Employee", () => {
 
 - Validar em `restore`: dados antigos válidos na época podem quebrar a leitura.
 - Usar `restore` fora de mappers/repositórios para "pular validação".
+- Copiar as props de novo na fábrica (`new X({ ...props }, id)`): o construtor da `Entity` já
+  faz essa cópia rasa, e a segunda não tem efeito. Ela também não protege arrays e objetos
+  internos: para esses, copie o campo (`lines: [...props.lines]`).
 - Expor `props` ou um `toJSON` com tudo: a conversão para DTO deve ser explícita.
 - Método genérico `update(props)` em vez de transições com nome do negócio.
 - Mudar estado dentro de `result.map(() => { ... })`: `map` é para transformar valor. Para
