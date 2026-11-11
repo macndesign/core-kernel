@@ -346,9 +346,11 @@ acopladas a caminhos/API do pharmacore).
 - [x] Nome reservado: `0.0.0` publicado manualmente e validado instalando do registro
       (ESM, CJS, CLI).
 - [x] Cadastrar o secret `NPM_TOKEN` no GitHub.
-- [ ] `publish.yml` reaproveita o `ci.yml` (`workflow_call`), fixa o Bun (`.bun-version`) e
+- [x] `publish.yml` reaproveita o `ci.yml` (`workflow_call`), fixa o Bun (`.bun-version`) e
       cria a release no GitHub com as notas do CHANGELOG (`scripts/release-notes.ts`).
-      Marcar ao validar na primeira release publicada pelo novo fluxo.
+      Validado na 0.3.1 (2026-11-11): tag → CI completo → `core-kernel@0.3.1` no npm com
+      provenance (o core-kernel-check 0.1.0, já publicado, foi pulado) → release `0.3.1` com
+      só a seção do core-kernel.
 - [x] Publicar `0.1.0-beta.0` pelo CI (tag `v0.1.0-beta.0`, 2026-10-13) e validar instalando
       do registro: Node ESM, CJS, Bun, CLI de skills e `npm audit signatures` (assinatura e
       atestado de provenance verificados). Dist-tags: `latest` = 0.0.0, `beta` = 0.1.0-beta.0.
