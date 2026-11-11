@@ -119,10 +119,20 @@ resolver isso.
 2. Para lançar: `bun run version-packages` aplica os changesets, atualiza a versão e o
    `CHANGELOG.md`. Commit: `chore: release vX.Y.Z`.
 3. `git tag vX.Y.Z && git push origin main --tags` → o `publish.yml` confere se a tag bate com
-   o `package.json` do core-kernel, roda o `verify` e publica com `changeset publish` (com
+   o `package.json` do core-kernel, roda o CI inteiro (reaproveita o `ci.yml` via
+   `workflow_call`: verify, ts-compat e matriz de Node) e publica com `changeset publish` (com
    provenance) todo pacote cuja versão ainda não está no registro — o core-kernel e o
    core-kernel-check. Prerelease (modo `pre`) vai para a dist-tag do modo, nunca para
    `latest`. Requer o secret `NPM_TOKEN` no GitHub.
+4. O mesmo workflow cria a release no GitHub (título `X.Y.Z`; betas como pre-release) com as
+   seções do CHANGELOG de cada pacote publicado (`scripts/release-notes.ts`). Não crie à mão.
+   Se só esse passo falhar, o npm já tem a versão: rode o job de novo (o publish não repete o
+   que já está no registro e a release, sem as tags locais, sai só com o core-kernel) ou crie
+   com `bun scripts/release-notes.ts core-kernel@X.Y.Z [core-kernel-check@A.B.C] > notas.md`
+   e `gh release create vX.Y.Z --verify-tag --title X.Y.Z --notes-file notas.md`.
+
+A versão do Bun do CI fica em `.bun-version` (lida pelos workflows). Ao atualizar o Bun
+local, atualize o arquivo no mesmo PR.
 
 Pré-release (opcional, para testar mudanças grandes): `bunx changeset pre enter beta` antes do
 `version-packages`; enquanto `.changeset/pre.json` existir, as versões saem como `-beta.N` e os
