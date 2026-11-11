@@ -7,19 +7,13 @@ on:
 
 permissions:
   contents: read
-  id-token: write # provenance do npm
 
 jobs:
-  publish:
+  # Barato e primeiro: não vale rodar o CI inteiro para uma tag que não bate com a versão.
+  tag:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          registry-url: https://registry.npmjs.org
-
       # A tag (vX.Y.Z) precisa bater com a versão do core-kernel no package.json.
       - name: Tag confere com o package.json
         run: |
@@ -29,14 +23,56 @@ jobs:
             exit 1
           fi
 
+  # O CI inteiro (verify, ts-compat, matriz de Node): a barra para publicar é a mesma do PR.
+  ci:
+    needs: tag
+    uses: ./.github/workflows/ci.yml
+
+  publish:
+    needs: ci
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # criar a release no GitHub
+      id-token: write # provenance do npm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
       - run: bun install --frozen-lockfile
-      - run: bun run verify
+      # O CI já verificou tudo; aqui só o build dos dois pacotes que vão para o npm.
+      - run: bun run build
+      - run: bun run --cwd packages/check build
       # changeset publish publica cada pacote do repositório (core-kernel e core-kernel-check)
-      # cuja versão ainda não está no registro, via npm (que gera o atestado de provenance).
+      # cuja versão ainda não está no registro, via npm (que gera o atestado de provenance),
+      # e cria uma tag git local `nome@versão` para cada um (usadas nas notas abaixo).
       # Em prerelease (.changeset/pre.json), usa a dist-tag do modo pre, nunca latest.
-      # Os scripts do pacote ficam desligados: o verify já rodou acima.
+      # Os scripts do pacote ficam desligados: o CI já rodou as verificações.
       - run: ./node_modules/.bin/changeset publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
           npm_config_ignore_scripts: "true"
+
+      # Só depois do npm: a release no GitHub existe apenas para versões de fato publicadas.
+      # As notas são as seções do CHANGELOG de cada pacote publicado nesta execução (não as
+      # notas geradas pelo GitHub, que escolhe a release anterior por heurística e se confunde
+      # com as betas). Betas saem como pre-release. Rodar de novo não duplica a release.
+      - name: Criar release no GitHub
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "Release $GITHUB_REF_NAME já existe."
+            exit 0
+          fi
+          bun scripts/release-notes.ts $(git tag --points-at HEAD --list '*@*') > "$RUNNER_TEMP/notes.md"
+          PRERELEASE=""
+          case "$GITHUB_REF_NAME" in *-*) PRERELEASE="--prerelease" ;; esac
+          gh release create "$GITHUB_REF_NAME" --verify-tag --title "${GITHUB_REF_NAME#v}" \
+            --notes-file "$RUNNER_TEMP/notes.md" $PRERELEASE
+        env:
+          GH_TOKEN: ${{ github.token }}

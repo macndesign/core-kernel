@@ -92,7 +92,7 @@
   "scripts": {
     "build": "bun scripts/build.ts",
     "test": "bun test ./src ./cli ./hooks",
-    "test:coverage": "bun test --coverage ./src ./cli ./hooks",
+    "test:coverage": "bun test --coverage ./src ./cli ./hooks ./scripts",
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
