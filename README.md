@@ -8,7 +8,8 @@ frameworks, banco e UI — em **Bun** e **Node ≥ 20**, para backend, web, mobi
 - `UseCase`, ports de repositório segregadas, `Clock`, paginação
 - VOs prontos (`Email`, `Money`, `DateRange`, `Cpf`, `Cnpj` alfanumérico...)
 - Kit de testes: repositório em memória, relógio fixo, ids previsíveis
-- Skills para assistentes de código (Claude Code, Codex...) que ensinam os padrões da lib
+- Skills para assistentes de código (Claude Code, GitHub Copilot CLI, Codex...) que ensinam os
+  padrões da lib
 - Zero dependências de runtime · ESM e CommonJS · TypeScript ≥ 5.4
 
 > Versão 0.x: mudanças incompatíveis podem sair em versões *minor* (0.1 → 0.2), sempre
@@ -179,15 +180,26 @@ torna ids previsíveis (lembre que ids de eventos também consomem a sequência)
 
 ## Recursos para agentes de código
 
-O core-kernel ensina um assistente de código (Claude Code, Codex e outros) a usar a lib nos
-padrões dela, em quatro camadas:
+O core-kernel ensina assistentes de código (Claude Code, GitHub Copilot CLI, Codex e outros) a
+usar a lib nos padrões dela:
 
-| Recurso | O que faz | Claude Code | Codex |
-|---|---|---|---|
-| **Skills** (11) | Padrões, exemplos e checklists de cada bloco | plugin ou `skills add` | `skills add --target agents` |
-| **Agentes** | `ddd-architect` (modela antes de codar), `ddd-reviewer` (revisa diffs), `core-kernel-migrator` (migra projetos) | plugin ou `agents add` | `agents add --target agents` (`.codex/agents/*.toml`) |
-| **Checker** ([`core-kernel-check`](./packages/check)) | Acusa, com tipos, os bugs que compilam: id tipado no SQL, erro decidido pelo texto, `try/catch` em volta de `execute()`... | automático a cada edição (hook do plugin) | no CI ou à mão |
-| **`llms.txt`** | Resumo da API e regras para assistentes | — | — |
+| Recurso | O que faz | Claude Code | GitHub Copilot CLI | Codex |
+|---|---|---|---|---|
+| **Skills** (11) | Padrões, exemplos e checklists de cada bloco | plugin ou `skills add` | plugin | `skills add --target agents` |
+| **Agentes** | `ddd-architect` (modela antes de codar), `ddd-reviewer` (revisa diffs), `core-kernel-migrator` (migra projetos) | plugin ou `agents add` | — | `agents add --target agents` (`.codex/agents/*.toml`) |
+| **Checker** ([`core-kernel-check`](./packages/check)) | Acusa, com tipos, os bugs que compilam: id tipado no SQL, erro decidido pelo texto, `try/catch` em volta de `execute()`... | automático a cada edição (hook do plugin) | — | no CI ou à mão |
+| **`llms.txt`** | Resumo da API e regras para assistentes | — | — | — |
+
+### Plugin do GitHub Copilot CLI
+
+```bash
+copilot plugin marketplace add macndesign/core-kernel
+copilot plugin install core-kernel@core-kernel
+```
+
+O catálogo do Copilot fica em `.github/plugin/marketplace.json`, separado do marketplace
+Claude Code. O plugin disponibiliza as 11 skills; para conferir a instalação, use
+`copilot plugin list` e `copilot skill list`.
 
 ### Plugin do Claude Code (recomendado)
 

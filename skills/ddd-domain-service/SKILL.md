@@ -1,6 +1,11 @@
 ---
 name: ddd-domain-service
-description: Criar ou revisar serviços de domínio com o core-kernel. Usar quando uma regra de negócio envolver vários agregados/entidades ou VOs e não pertencer naturalmente a nenhum deles — políticas, calculadoras, verificações de conflito (ex.: sobreposição de horários, cálculo de preço/saldo, permissões) — ou quando o pedido citar "domain service", "serviço de domínio", "policy", "calculator", arquivos *.service.ts no core.
+description: >-
+  Criar ou revisar serviços de domínio com o core-kernel. Usar quando uma regra de negócio
+  envolver vários agregados/entidades ou VOs e não pertencer naturalmente a nenhum deles —
+  políticas, calculadoras, verificações de conflito (ex.: sobreposição de horários, cálculo de
+  preço/saldo, permissões) — ou quando o pedido citar "domain service", "serviço de domínio",
+  "policy", "calculator", arquivos *.service.ts no core.
 ---
 
 # Domain Service (core-kernel)
