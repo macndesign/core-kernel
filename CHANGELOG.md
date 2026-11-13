@@ -1,5 +1,12 @@
 # core-kernel
 
+## 0.3.2
+
+### Patch Changes
+
+- 6bb6b8a: Adiciona o marketplace do GitHub Copilot, corrige o frontmatter da skill de serviço de domínio e
+  sincroniza a versão do catálogo Copilot com o pacote.
+
 ## 0.3.1
 
 ### Patch Changes
